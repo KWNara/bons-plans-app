@@ -175,6 +175,13 @@ export default function ComptePage() {
                 ))}
               </ul>
             )}
+
+            <Link
+              href="/mes-bons-plans"
+              className="block text-center w-full rounded border border-teal text-teal py-2 font-medium mt-4"
+            >
+              Mes bons plans
+            </Link>
           </div>
         )}
 
