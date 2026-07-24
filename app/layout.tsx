@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CityProvider } from "@/lib/cityContext";
 
 export const metadata: Metadata = {
   title: "Bons Plans — les offres de ta ville",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <CityProvider>{children}</CityProvider>
+      </body>
     </html>
   );
 }

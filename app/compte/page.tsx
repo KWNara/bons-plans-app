@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { CitySearchInput } from "@/components/CitySearchInput";
+import { resolveCity, type BanSuggestion } from "@/lib/cities";
 
 type Profile = {
   pseudo: string;
@@ -12,8 +14,15 @@ type Profile = {
 };
 
 type MerchantProfile = {
+  id: string;
   nom_enseigne: string;
   statut_verification: "verifie" | "en_attente_verification";
+};
+
+type DiffusionCity = {
+  id: string;
+  city_id: string;
+  cities: { nom: string; code_postal: string } | null;
 };
 
 export default function ComptePage() {
@@ -21,6 +30,8 @@ export default function ComptePage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
+  const [diffusionCities, setDiffusionCities] = useState<DiffusionCity[]>([]);
+  const [cityError, setCityError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -44,11 +55,12 @@ export default function ComptePage() {
       if (userRow?.role === "commercant") {
         const { data: merchantRow } = await supabase
           .from("merchant_profiles")
-          .select("nom_enseigne, statut_verification")
+          .select("id, nom_enseigne, statut_verification")
           .eq("user_id", user.id)
           .single();
 
         setMerchant(merchantRow);
+        if (merchantRow) loadDiffusionCities(merchantRow.id);
       }
 
       setLoading(false);
@@ -56,6 +68,34 @@ export default function ComptePage() {
 
     load();
   }, [router]);
+
+  async function loadDiffusionCities(merchantId: string) {
+    const { data } = await supabase
+      .from("merchant_cities")
+      .select("id, city_id, cities:city_id (nom, code_postal)")
+      .eq("merchant_id", merchantId);
+    setDiffusionCities((data as unknown as DiffusionCity[]) ?? []);
+  }
+
+  async function handleAddDiffusionCity(suggestion: BanSuggestion) {
+    if (!merchant) return;
+    setCityError(null);
+    try {
+      const city = await resolveCity(suggestion);
+      const { error } = await supabase
+        .from("merchant_cities")
+        .insert({ merchant_id: merchant.id, city_id: city.id });
+      if (error && error.code !== "23505") throw error;
+      loadDiffusionCities(merchant.id);
+    } catch (e) {
+      setCityError(e instanceof Error ? e.message : "Erreur inconnue.");
+    }
+  }
+
+  async function handleRemoveDiffusionCity(id: string) {
+    await supabase.from("merchant_cities").delete().eq("id", id);
+    if (merchant) loadDiffusionCities(merchant.id);
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -104,6 +144,40 @@ export default function ComptePage() {
           )}
         </div>
 
+        {profile?.role === "commercant" && merchant && (
+          <div className="rounded border border-ink/10 bg-white/50 p-4 mb-4">
+            <p className="text-sm text-ink/60 mb-2">Villes de diffusion</p>
+
+            <CitySearchInput
+              onSelect={handleAddDiffusionCity}
+              placeholder="Ajouter une ville de diffusion"
+            />
+            {cityError && <p className="text-tag text-sm mt-2">{cityError}</p>}
+
+            {diffusionCities.length > 0 && (
+              <ul className="mt-3 space-y-2">
+                {diffusionCities.map((dc) => (
+                  <li
+                    key={dc.id}
+                    className="flex items-center justify-between rounded border border-ink/10 px-3 py-2"
+                  >
+                    <span>
+                      {dc.cities?.nom} ({dc.cities?.code_postal})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDiffusionCity(dc.id)}
+                      className="text-tag text-sm"
+                    >
+                      Retirer
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {profile?.role === "particulier" && (
           <Link
             href="/devenir-commercant"
@@ -112,6 +186,13 @@ export default function ComptePage() {
             Devenir commerçant
           </Link>
         )}
+
+        <Link
+          href="/ville"
+          className="block text-center w-full rounded border border-ink/20 text-ink py-2 font-medium mb-3"
+        >
+          Changer de ville
+        </Link>
 
         <button
           onClick={handleSignOut}
