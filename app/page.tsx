@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MapPin, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCity } from "@/lib/cityContext";
+import { useCurrentUserId } from "@/lib/useCurrentUserId";
 import { DealCard, type FeedDeal } from "@/components/DealCard";
 
 type Category = { id: string; nom: string };
@@ -12,11 +13,15 @@ type Sort = "recent" | "popularite" | "expire_bientot";
 
 export default function Home() {
   const { selectedCity, loaded } = useCity();
+  const userId = useCurrentUserId();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
   const [deals, setDeals] = useState<FeedDeal[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
+  const [repostedIds, setRepostedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     supabase
@@ -37,7 +42,7 @@ export default function Home() {
     let query = supabase
       .from("deals")
       .select(
-        "id, titre, photos, prix_avant, prix_apres, reduction_pourcentage, date_fin, likes_count, comments_count, created_at, merchant_profiles(nom_enseigne), deal_cities!inner(city_id)"
+        "id, titre, photos, prix_avant, prix_apres, reduction_pourcentage, date_fin, likes_count, comments_count, reposts_count, created_at, merchant_profiles(id, nom_enseigne), deal_cities!inner(city_id)"
       )
       .eq("statut", "publie")
       .eq("deal_cities.city_id", selectedCity.id)
@@ -49,11 +54,28 @@ export default function Home() {
     else if (sort === "popularite") query = query.order("likes_count", { ascending: false });
     else query = query.order("date_fin", { ascending: true, nullsFirst: false });
 
-    query.then(({ data }) => {
-      setDeals((data as unknown as FeedDeal[]) ?? []);
+    query.then(async ({ data }) => {
+      const feedDeals = (data as unknown as FeedDeal[]) ?? [];
+      setDeals(feedDeals);
       setFeedLoading(false);
+
+      if (userId && feedDeals.length > 0) {
+        const dealIds = feedDeals.map((d) => d.id);
+        const [{ data: likes }, { data: favorites }, { data: reposts }] = await Promise.all([
+          supabase.from("likes").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
+          supabase.from("favorites").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
+          supabase.from("reposts").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
+        ]);
+        setLikedIds(new Set((likes ?? []).map((l) => l.deal_id)));
+        setFavoritedIds(new Set((favorites ?? []).map((f) => f.deal_id)));
+        setRepostedIds(new Set((reposts ?? []).map((r) => r.deal_id)));
+      } else {
+        setLikedIds(new Set());
+        setFavoritedIds(new Set());
+        setRepostedIds(new Set());
+      }
     });
-  }, [selectedCity, categoryId, sort]);
+  }, [selectedCity, categoryId, sort, userId]);
 
   if (!loaded) return null;
 
@@ -134,7 +156,15 @@ export default function Home() {
 
         {selectedCity &&
           deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} villeLabel={selectedCity.nom} />
+            <DealCard
+              key={`${deal.id}:${likedIds.has(deal.id)}:${favoritedIds.has(deal.id)}:${repostedIds.has(deal.id)}`}
+              deal={deal}
+              villeLabel={selectedCity.nom}
+              userId={userId}
+              liked={likedIds.has(deal.id)}
+              favorited={favoritedIds.has(deal.id)}
+              reposted={repostedIds.has(deal.id)}
+            />
           ))}
       </main>
     </div>

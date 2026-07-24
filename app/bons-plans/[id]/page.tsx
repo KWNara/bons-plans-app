@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Heart, MessageCircle, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { discountLabel, formatTimeRemaining } from "@/lib/dealFormat";
+import { useCurrentUserId } from "@/lib/useCurrentUserId";
+import { LikeButton } from "@/components/LikeButton";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { RepostButton } from "@/components/RepostButton";
+import { CommentSection } from "@/components/CommentSection";
 
 type Detail = {
   id: string;
@@ -20,22 +25,32 @@ type Detail = {
   stock_limite: number | null;
   likes_count: number;
   comments_count: number;
-  merchant_profiles: { nom_enseigne: string; logo_url: string | null; description: string | null } | null;
+  reposts_count: number;
+  merchant_profiles: {
+    id: string;
+    nom_enseigne: string;
+    logo_url: string | null;
+    description: string | null;
+  } | null;
   categories: { nom: string } | null;
   deal_cities: { cities: { nom: string; code_postal: string } | null }[];
 };
 
 export default function BonPlanDetailPage() {
   const params = useParams<{ id: string }>();
+  const userId = useCurrentUserId();
   const [state, setState] = useState<"loading" | "not-found" | "ready">("loading");
   const [deal, setDeal] = useState<Detail | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const [reposted, setReposted] = useState(false);
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from("deals")
         .select(
-          "id, titre, description, photos, prix_avant, prix_apres, reduction_pourcentage, date_debut, date_fin, stock_limite, likes_count, comments_count, merchant_profiles(nom_enseigne, logo_url, description), categories(nom), deal_cities(cities(nom, code_postal))"
+          "id, titre, description, photos, prix_avant, prix_apres, reduction_pourcentage, date_debut, date_fin, stock_limite, likes_count, comments_count, reposts_count, merchant_profiles(id, nom_enseigne, logo_url, description), categories(nom), deal_cities(cities(nom, code_postal))"
         )
         .eq("id", params.id)
         .single();
@@ -51,6 +66,25 @@ export default function BonPlanDetailPage() {
 
     load();
   }, [params.id]);
+
+  useEffect(() => {
+    if (!userId || !deal) return;
+
+    Promise.all([
+      supabase.from("likes").select("id").eq("user_id", userId).eq("deal_id", deal.id).maybeSingle(),
+      supabase
+        .from("favorites")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("deal_id", deal.id)
+        .maybeSingle(),
+      supabase.from("reposts").select("id").eq("user_id", userId).eq("deal_id", deal.id).maybeSingle(),
+    ]).then(([likeRes, favRes, repostRes]) => {
+      setLiked(!!likeRes.data);
+      setFavorited(!!favRes.data);
+      setReposted(!!repostRes.data);
+    });
+  }, [userId, deal]);
 
   if (state === "loading") {
     return (
@@ -105,9 +139,14 @@ export default function BonPlanDetailPage() {
             </span>
           )}
 
-          <p className="text-xs font-semibold text-teal uppercase tracking-wide">
-            {deal.merchant_profiles?.nom_enseigne}
-          </p>
+          {deal.merchant_profiles && (
+            <Link
+              href={`/commercant/${deal.merchant_profiles.id}`}
+              className="block text-xs font-semibold text-teal uppercase tracking-wide"
+            >
+              {deal.merchant_profiles.nom_enseigne}
+            </Link>
+          )}
           <h1 className="text-2xl font-bold text-ink mt-1 mb-3">{deal.titre}</h1>
 
           {(deal.prix_avant || deal.prix_apres) && (
@@ -137,16 +176,25 @@ export default function BonPlanDetailPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-4 text-ink/60 mb-2">
-            <span className="flex items-center gap-1 text-sm">
-              <Heart size={18} />
-              {deal.likes_count}
-            </span>
-            <span className="flex items-center gap-1 text-sm">
-              <MessageCircle size={18} />
-              {deal.comments_count}
-            </span>
-            <span className="text-sm text-ink/50 ml-auto">{formatTimeRemaining(deal.date_fin)}</span>
+          <div
+            key={`${liked}:${favorited}:${reposted}`}
+            className="flex items-center gap-4 text-ink/60 mb-2"
+          >
+            <LikeButton dealId={deal.id} userId={userId} initialLiked={liked} initialCount={deal.likes_count} />
+            <RepostButton
+              dealId={deal.id}
+              userId={userId}
+              initialReposted={reposted}
+              initialCount={deal.reposts_count}
+              allowComment
+            />
+            <FavoriteButton
+              dealId={deal.id}
+              userId={userId}
+              initialFavorited={favorited}
+              className="ml-auto flex items-center gap-1 text-sm"
+            />
+            <span className="text-sm text-ink/50">{formatTimeRemaining(deal.date_fin)}</span>
           </div>
 
           {deal.stock_limite !== null && (
@@ -159,6 +207,8 @@ export default function BonPlanDetailPage() {
               <p className="text-ink/80 text-sm">{deal.merchant_profiles.description}</p>
             </div>
           )}
+
+          <CommentSection dealId={deal.id} userId={userId} />
         </div>
       </div>
     </main>
