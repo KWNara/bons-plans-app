@@ -16,6 +16,7 @@ export type FeedDeal = {
   likes_count: number;
   comments_count: number;
   reposts_count: number;
+  category_id: string | null;
   merchant_profiles: { id: string; nom_enseigne: string } | null;
 };
 

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { discountLabel } from "@/lib/dealFormat";
+import { useCurrentUserId } from "@/lib/useCurrentUserId";
+import { FollowMerchantButton } from "@/components/FollowMerchantButton";
 
 type Merchant = {
   id: string;
@@ -31,6 +33,7 @@ function isActive(deal: Deal): boolean {
 
 export default function CommercantVitrinePage() {
   const params = useParams<{ id: string }>();
+  const userId = useCurrentUserId();
   const [state, setState] = useState<"loading" | "not-found" | "ready">("loading");
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -114,10 +117,11 @@ export default function CommercantVitrinePage() {
           ) : (
             <div className="w-16 h-16 rounded-full bg-ink/10" />
           )}
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-ink">{merchant.nom_enseigne}</h1>
             <p className="text-sm text-ink/50">{engagement} interactions cumulées</p>
           </div>
+          <FollowMerchantButton merchantId={merchant.id} userId={userId} />
         </div>
 
         {merchant.description && <p className="text-ink/70 mb-6">{merchant.description}</p>}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MapPin, ChevronDown } from "lucide-react";
+import { MapPin, ChevronDown, Bell } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCity } from "@/lib/cityContext";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
@@ -10,10 +10,12 @@ import { DealCard, type FeedDeal } from "@/components/DealCard";
 
 type Category = { id: string; nom: string };
 type Sort = "recent" | "popularite" | "expire_bientot";
+type Tab = "ville" | "pourtoi";
 
 export default function Home() {
   const { selectedCity, loaded } = useCity();
   const userId = useCurrentUserId();
+  const [tab, setTab] = useState<Tab>("ville");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
@@ -22,6 +24,9 @@ export default function Home() {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [repostedIds, setRepostedIds] = useState<Set<string>>(new Set());
+  const [followedMerchantIds, setFollowedMerchantIds] = useState<Set<string>>(new Set());
+  const [topCategoryIds, setTopCategoryIds] = useState<Set<string>>(new Set());
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     supabase
@@ -30,6 +35,51 @@ export default function Home() {
       .order("nom")
       .then(({ data }) => setCategories(data ?? []));
   }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setUnreadCount(0);
+      return;
+    }
+    supabase
+      .from("alerts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_read", false)
+      .then(({ count }) => setUnreadCount(count ?? 0));
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setFollowedMerchantIds(new Set());
+      setTopCategoryIds(new Set());
+      return;
+    }
+
+    supabase
+      .from("follows")
+      .select("followed_merchant_id")
+      .eq("follower_id", userId)
+      .not("followed_merchant_id", "is", null)
+      .then(({ data }) => {
+        setFollowedMerchantIds(new Set((data ?? []).map((f) => f.followed_merchant_id as string)));
+      });
+
+    supabase
+      .from("likes")
+      .select("deals:deal_id (category_id)")
+      .eq("user_id", userId)
+      .then(({ data }) => {
+        const counts = new Map<string, number>();
+        for (const row of (data as unknown as { deals: { category_id: string | null } | null }[]) ?? []) {
+          const catId = row.deals?.category_id;
+          if (!catId) continue;
+          counts.set(catId, (counts.get(catId) ?? 0) + 1);
+        }
+        const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id]) => id);
+        setTopCategoryIds(new Set(top));
+      });
+  }, [userId]);
 
   useEffect(() => {
     if (!selectedCity) {
@@ -42,7 +92,7 @@ export default function Home() {
     let query = supabase
       .from("deals")
       .select(
-        "id, titre, photos, prix_avant, prix_apres, reduction_pourcentage, date_fin, likes_count, comments_count, reposts_count, created_at, merchant_profiles(id, nom_enseigne), deal_cities!inner(city_id)"
+        "id, titre, photos, prix_avant, prix_apres, reduction_pourcentage, date_fin, likes_count, comments_count, reposts_count, category_id, created_at, merchant_profiles(id, nom_enseigne), deal_cities!inner(city_id)"
       )
       .eq("statut", "publie")
       .eq("deal_cities.city_id", selectedCity.id)
@@ -77,22 +127,67 @@ export default function Home() {
     });
   }, [selectedCity, categoryId, sort, userId]);
 
+  const displayedDeals = useMemo(() => {
+    if (tab === "ville") return deals;
+
+    // "Pour toi" : priorise commerçants suivis, puis catégories les plus
+    // likées. Sans historique (nouvel utilisateur), le score est nul pour
+    // tous les bons plans et on retombe naturellement sur l'ordre du fil Ville.
+    function score(d: FeedDeal): number {
+      if (d.merchant_profiles && followedMerchantIds.has(d.merchant_profiles.id)) return 2;
+      if (d.category_id && topCategoryIds.has(d.category_id)) return 1;
+      return 0;
+    }
+
+    return [...deals].sort((a, b) => score(b) - score(a));
+  }, [tab, deals, followedMerchantIds, topCategoryIds]);
+
   if (!loaded) return null;
 
   return (
     <div className="min-h-screen bg-paper font-sans">
-      <header className="sticky top-0 z-10 bg-paper/95 backdrop-blur border-b border-ink/10 px-4 pt-4 pb-3">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-paper/95 backdrop-blur border-b border-ink/10 px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between mb-3">
           <Link href="/ville" className="flex items-center gap-1 text-ink font-bold text-lg">
             <MapPin size={18} className="text-tag" />
             {selectedCity ? selectedCity.nom : "Choisir une ville"}
             <ChevronDown size={16} />
           </Link>
-          <nav className="flex items-center gap-3 text-sm text-ink/70">
+          <nav className="flex items-center gap-4 text-sm text-ink/70">
+            <Link href="/alertes" className="underline">
+              Mes alertes
+            </Link>
+            <Link href="/notifications" className="relative">
+              <Bell size={20} className="text-ink" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-tag text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
             <Link href="/compte" className="underline">
               Mon compte
             </Link>
           </nav>
+        </div>
+
+        <div className="flex gap-6 border-b border-ink/10">
+          <button
+            onClick={() => setTab("ville")}
+            className={`pb-2 text-sm font-semibold ${
+              tab === "ville" ? "text-ink border-b-2 border-marigold" : "text-ink/40"
+            }`}
+          >
+            Fil Ville
+          </button>
+          <button
+            onClick={() => setTab("pourtoi")}
+            className={`pb-2 text-sm font-semibold ${
+              tab === "pourtoi" ? "text-ink border-b-2 border-marigold" : "text-ink/40"
+            }`}
+          >
+            Pour toi
+          </button>
         </div>
       </header>
 
@@ -148,14 +243,14 @@ export default function Home() {
           </div>
         )}
 
-        {selectedCity && !feedLoading && deals.length === 0 && (
+        {selectedCity && !feedLoading && displayedDeals.length === 0 && (
           <p className="text-ink/50 text-sm col-span-full text-center py-10">
             Aucun bon plan dans cette catégorie pour l&apos;instant.
           </p>
         )}
 
         {selectedCity &&
-          deals.map((deal) => (
+          displayedDeals.map((deal) => (
             <DealCard
               key={`${deal.id}:${likedIds.has(deal.id)}:${favoritedIds.has(deal.id)}:${repostedIds.has(deal.id)}`}
               deal={deal}
