@@ -106,7 +106,14 @@ export default function NouveauBonPlanPage() {
   if (gate.status === "quota-atteint") {
     return (
       <main className="min-h-screen flex items-center justify-center px-6 text-center">
-        <p className="text-tag">Passez à l&apos;offre payante pour publier plus d&apos;annonces.</p>
+        <div>
+          <p className="text-tag mb-3">
+            Passez à l&apos;offre payante pour publier plus d&apos;annonces.
+          </p>
+          <Link href="/tarifs" className="text-teal underline font-medium">
+            Voir les tarifs
+          </Link>
+        </div>
       </main>
     );
   }

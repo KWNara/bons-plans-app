@@ -339,6 +339,13 @@ export default function ComptePage() {
                 Voir ma vitrine
               </Link>
             </div>
+
+            <Link
+              href="/mon-abonnement"
+              className="block text-center w-full rounded border border-marigold text-ink py-2 font-medium mt-2"
+            >
+              Mon abonnement
+            </Link>
           </div>
         )}
 
