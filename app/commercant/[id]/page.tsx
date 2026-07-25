@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { discountLabel } from "@/lib/dealFormat";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
 import { FollowMerchantButton } from "@/components/FollowMerchantButton";
+import { ReportButton } from "@/components/ReportButton";
 
 type Merchant = {
   id: string;
@@ -124,7 +125,9 @@ export default function CommercantVitrinePage() {
           <FollowMerchantButton merchantId={merchant.id} userId={userId} />
         </div>
 
-        {merchant.description && <p className="text-ink/70 mb-6">{merchant.description}</p>}
+        {merchant.description && <p className="text-ink/70 mb-4">{merchant.description}</p>}
+
+        <ReportButton targetType="merchant" targetId={merchant.id} userId={userId} className="mb-6 flex items-center gap-1 text-sm text-ink/50" />
 
         <div className="mb-8">
           <p className="text-sm text-ink/60 mb-2">Bons plans actifs ({actifs.length})</p>

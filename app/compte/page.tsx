@@ -244,7 +244,11 @@ export default function ComptePage() {
 
           <p className="text-sm text-ink/60 mt-4">Statut</p>
           <p className="font-medium">
-            {profile?.role === "commercant" ? "Commerçant" : "Particulier"}
+            {profile?.role === "commercant"
+              ? "Commerçant"
+              : profile?.role === "admin"
+                ? "Admin"
+                : "Particulier"}
           </p>
 
           {profile?.role === "commercant" && merchant && (
@@ -261,6 +265,15 @@ export default function ComptePage() {
                 )}
               </p>
             </>
+          )}
+
+          {profile?.role === "admin" && (
+            <Link
+              href="/admin/signalements"
+              className="block text-center w-full rounded bg-ink text-white py-2 font-medium mt-3"
+            >
+              Back-office admin
+            </Link>
           )}
         </div>
 

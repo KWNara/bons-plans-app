@@ -11,6 +11,7 @@ import { LikeButton } from "@/components/LikeButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { RepostButton } from "@/components/RepostButton";
 import { CommentSection } from "@/components/CommentSection";
+import { ReportButton } from "@/components/ReportButton";
 
 type Detail = {
   id: string;
@@ -200,6 +201,8 @@ export default function BonPlanDetailPage() {
           {deal.stock_limite !== null && (
             <p className="text-sm text-marigold mb-4">Stock limité : {deal.stock_limite} restant(s)</p>
           )}
+
+          <ReportButton targetType="deal" targetId={deal.id} userId={userId} />
 
           {deal.merchant_profiles?.description && (
             <div className="mt-6 rounded-xl border border-ink/10 bg-white/60 p-4">

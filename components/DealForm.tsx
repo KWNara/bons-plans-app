@@ -62,6 +62,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -77,6 +78,36 @@ export function DealForm({ merchantId, existingDeal }: Props) {
     }
     load();
   }, [merchantId]);
+
+  // Avertissement non bloquant si une annonce très similaire existe déjà
+  // (même titre, même commerçant, une ville en commun) — cf Point 9 #5.
+  useEffect(() => {
+    if (!titre.trim() || selectedCityIds.length === 0) {
+      setDuplicateWarning(null);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      let query = supabase
+        .from("deals")
+        .select("id, deal_cities!inner(city_id)")
+        .eq("merchant_id", merchantId)
+        .ilike("titre", titre.trim())
+        .in("deal_cities.city_id", selectedCityIds)
+        .limit(1);
+
+      if (isEdit) query = query.neq("id", existingDeal!.id);
+
+      const { data } = await query;
+      setDuplicateWarning(
+        data && data.length > 0
+          ? "Une annonce avec ce même titre existe déjà dans une de ces villes pour ton compte. Tu peux quand même publier si ce n'est pas un doublon."
+          : null
+      );
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [titre, selectedCityIds, merchantId, isEdit, existingDeal]);
 
   function toggleCity(cityId: string) {
     setSelectedCityIds((prev) =>
@@ -343,6 +374,10 @@ export function DealForm({ merchantId, existingDeal }: Props) {
           className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
         />
       </label>
+
+      {duplicateWarning && (
+        <p className="text-marigold text-sm mb-4">⚠️ {duplicateWarning}</p>
+      )}
 
       {error && <p className="text-tag mb-4 text-sm">{error}</p>}
 
