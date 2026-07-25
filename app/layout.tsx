@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CityProvider } from "@/lib/cityContext";
+import { Footer } from "@/components/Footer";
 
 const bodyFont = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="fr" className={bodyFont.variable}>
       <body>
         <CityProvider>{children}</CityProvider>
+        <Footer />
       </body>
     </html>
   );
