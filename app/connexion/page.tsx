@@ -3,12 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { AuthShell } from "@/components/ui/AuthShell";
+import { FormInput } from "@/components/ui/FormField";
+import { Spinner } from "@/components/ui/Spinner";
+import { GoogleIcon, AppleIcon } from "@/components/ui/BrandIcons";
 
 export default function ConnexionPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -37,30 +43,35 @@ export default function ConnexionPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-12">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-ink mb-6">Connexion</h1>
-
-        <label className="block mb-3">
-          <span className="text-sm text-ink/70">Email</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-          />
-        </label>
+    <AuthShell title="Connexion" subtitle="Content de te revoir">
+      <form onSubmit={handleSubmit}>
+        <FormInput
+          label="Email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         <label className="block mb-4">
-          <span className="text-sm text-ink/70">Mot de passe</span>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-          />
+          <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Mot de passe</span>
+          <div className="relative mt-1.5">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-control border border-ink/15 px-3.5 py-2.5 pr-10 text-sm focus:border-teal transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              className="press absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/40 hover:text-ink"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </label>
 
         {error && <p className="text-tag mb-4 text-sm">{error}</p>}
@@ -68,12 +79,13 @@ export default function ConnexionPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded bg-teal text-white py-2 font-medium disabled:opacity-50"
+          className="press w-full flex items-center justify-center gap-2 rounded-control bg-teal text-white py-3 font-semibold shadow-soft disabled:opacity-50"
         >
+          {loading && <Spinner size={16} />}
           {loading ? "Connexion..." : "Se connecter"}
         </button>
 
-        <div className="my-4 flex items-center gap-3 text-xs text-ink/40">
+        <div className="my-5 flex items-center gap-3 text-xs text-ink/40">
           <span className="flex-1 h-px bg-ink/10" />
           ou
           <span className="flex-1 h-px bg-ink/10" />
@@ -82,25 +94,27 @@ export default function ConnexionPage() {
         <button
           type="button"
           onClick={() => handleOAuth("google")}
-          className="w-full rounded border border-ink/20 py-2 font-medium mb-2"
+          className="press w-full flex items-center justify-center gap-2.5 rounded-control border border-ink/15 py-2.5 font-medium text-sm text-ink mb-2 hover:bg-paper"
         >
+          <GoogleIcon size={16} />
           Continuer avec Google
         </button>
         <button
           type="button"
           onClick={() => handleOAuth("apple")}
-          className="w-full rounded border border-ink/20 py-2 font-medium"
+          className="press w-full flex items-center justify-center gap-2.5 rounded-control border border-ink/15 py-2.5 font-medium text-sm text-ink hover:bg-paper"
         >
+          <AppleIcon size={16} />
           Continuer avec Apple
         </button>
 
-        <p className="mt-4 text-sm text-ink/70 text-center">
+        <p className="mt-5 text-sm text-ink/60 text-center">
           Pas encore de compte ?{" "}
-          <Link href="/inscription" className="text-teal underline">
+          <Link href="/inscription" className="text-teal underline font-medium">
             S&apos;inscrire
           </Link>
         </p>
       </form>
-    </main>
+    </AuthShell>
   );
 }

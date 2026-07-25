@@ -60,11 +60,11 @@ export function FollowMerchantButton({ merchantId, userId }: Props) {
     <button
       onClick={toggle}
       disabled={following === null || busy}
-      className={
+      className={`press rounded-full font-semibold px-4 py-1.5 text-sm shadow-soft disabled:opacity-50 ${
         following
-          ? "rounded-full border border-ink/20 text-ink px-4 py-1.5 text-sm font-medium"
-          : "rounded-full bg-teal text-white px-4 py-1.5 text-sm font-medium"
-      }
+          ? "border border-ink/15 bg-white text-ink"
+          : "bg-teal text-white"
+      }`}
     >
       {following ? "Suivi ✓" : "Suivre"}
     </button>

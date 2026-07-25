@@ -2,13 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MapPin, ChevronDown, Bell } from "lucide-react";
+import { MapPin, ChevronDown, Bell, UserRound, BellPlus, MapPinOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCity } from "@/lib/cityContext";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
 import { DealCard, type FeedDeal } from "@/components/DealCard";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { DealCardSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 
-type Category = { id: string; nom: string };
+type Category = { id: string; nom: string; icone: string | null };
 type Sort = "recent" | "popularite" | "expire_bientot";
 type Tab = "ville" | "pourtoi";
 
@@ -21,6 +25,8 @@ export default function Home() {
   const [sort, setSort] = useState<Sort>("recent");
   const [deals, setDeals] = useState<FeedDeal[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [repostedIds, setRepostedIds] = useState<Set<string>>(new Set());
@@ -28,10 +34,15 @@ export default function Home() {
   const [topCategoryIds, setTopCategoryIds] = useState<Set<string>>(new Set());
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const categoryIcones = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.icone])),
+    [categories]
+  );
+
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id, nom")
+      .select("id, nom, icone")
       .order("nom")
       .then(({ data }) => setCategories(data ?? []));
   }, []);
@@ -88,6 +99,7 @@ export default function Home() {
     }
 
     setFeedLoading(true);
+    setFeedError(false);
 
     let query = supabase
       .from("deals")
@@ -104,7 +116,13 @@ export default function Home() {
     else if (sort === "popularite") query = query.order("likes_count", { ascending: false });
     else query = query.order("date_fin", { ascending: true, nullsFirst: false });
 
-    query.then(async ({ data }) => {
+    query.then(async ({ data, error }) => {
+      if (error) {
+        setFeedError(true);
+        setFeedLoading(false);
+        return;
+      }
+
       const feedDeals = (data as unknown as FeedDeal[]) ?? [];
       setDeals(feedDeals);
       setFeedLoading(false);
@@ -125,7 +143,7 @@ export default function Home() {
         setRepostedIds(new Set());
       }
     });
-  }, [selectedCity, categoryId, sort, userId]);
+  }, [selectedCity, categoryId, sort, userId, reloadTick]);
 
   const displayedDeals = useMemo(() => {
     if (tab === "ville") return deals;
@@ -148,46 +166,68 @@ export default function Home() {
     <div className="min-h-screen bg-paper font-sans">
       <header className="sticky top-0 z-10 bg-paper/95 backdrop-blur border-b border-ink/10 px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-3">
-          <Link href="/ville" className="flex items-center gap-1 text-ink font-bold text-lg">
-            <MapPin size={18} className="text-tag" />
-            {selectedCity ? selectedCity.nom : "Choisir une ville"}
-            <ChevronDown size={16} />
+          <Link
+            href="/ville"
+            className="press flex items-center gap-1 text-ink font-extrabold text-lg -ml-1.5 pl-1.5 pr-2 py-1 rounded-control hover:bg-ink/5"
+          >
+            <MapPin size={18} className="text-tag shrink-0" />
+            <span className="truncate max-w-[40vw]">{selectedCity ? selectedCity.nom : "Choisir une ville"}</span>
+            <ChevronDown size={16} className="text-ink/40 shrink-0" />
           </Link>
-          <nav className="flex items-center gap-4 text-sm text-ink/70">
-            <Link href="/alertes" className="underline">
-              Mes alertes
+          <nav className="flex items-center gap-1 text-ink/70">
+            <Link
+              href="/alertes"
+              aria-label="Mes alertes"
+              className="press p-2 rounded-full hover:bg-ink/5"
+            >
+              <BellPlus size={20} />
             </Link>
-            <Link href="/notifications" className="relative">
-              <Bell size={20} className="text-ink" />
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="press relative p-2 rounded-full hover:bg-ink/5"
+            >
+              <Bell size={20} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-tag text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute top-1 right-1 bg-tag text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </Link>
-            <Link href="/compte" className="underline">
-              Mon compte
+            <Link
+              href="/compte"
+              aria-label="Mon compte"
+              className="press p-2 rounded-full hover:bg-ink/5"
+            >
+              <UserRound size={20} />
             </Link>
           </nav>
         </div>
 
-        <div className="flex gap-6 border-b border-ink/10">
+        <div className="relative flex gap-6 border-b border-ink/10">
           <button
             onClick={() => setTab("ville")}
-            className={`pb-2 text-sm font-semibold ${
-              tab === "ville" ? "text-ink border-b-2 border-marigold" : "text-ink/40"
+            className={`press pb-2.5 text-sm font-semibold transition-colors ${
+              tab === "ville" ? "text-ink" : "text-ink/40 hover:text-ink/60"
             }`}
           >
             Fil Ville
           </button>
           <button
             onClick={() => setTab("pourtoi")}
-            className={`pb-2 text-sm font-semibold ${
-              tab === "pourtoi" ? "text-ink border-b-2 border-marigold" : "text-ink/40"
+            className={`press pb-2.5 text-sm font-semibold transition-colors ${
+              tab === "pourtoi" ? "text-ink" : "text-ink/40 hover:text-ink/60"
             }`}
           >
             Pour toi
           </button>
+          <span
+            className="absolute bottom-0 h-[2.5px] bg-marigold rounded-full transition-all duration-250 ease-out"
+            style={{
+              width: tab === "ville" ? "58px" : "62px",
+              transform: tab === "ville" ? "translateX(0px)" : "translateX(94px)",
+            }}
+          />
         </div>
       </header>
 
@@ -196,10 +236,10 @@ export default function Home() {
           <div className="flex items-center gap-2 overflow-x-auto px-4 py-3 no-scrollbar">
             <button
               onClick={() => setCategoryId(null)}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium border ${
+              className={`press whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                 categoryId === null
                   ? "bg-ink text-white border-ink"
-                  : "bg-white text-ink/70 border-ink/10"
+                  : "bg-white text-ink/70 border-ink/10 hover:border-ink/25"
               }`}
             >
               Tout
@@ -208,22 +248,27 @@ export default function Home() {
               <button
                 key={c.id}
                 onClick={() => setCategoryId(c.id)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium border ${
+                className={`press flex items-center gap-1.5 whitespace-nowrap pl-1.5 pr-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                   categoryId === c.id
                     ? "bg-ink text-white border-ink"
-                    : "bg-white text-ink/70 border-ink/10"
+                    : "bg-white text-ink/70 border-ink/10 hover:border-ink/25"
                 }`}
               >
+                <CategoryIcon
+                  icone={c.icone}
+                  size={11}
+                  className={`w-5 h-5 ${categoryId === c.id ? "!bg-white/20 [&_svg]:!text-white" : ""}`}
+                />
                 {c.nom}
               </button>
             ))}
           </div>
 
-          <div className="px-4 pb-2">
+          <div className="px-4 pb-3">
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              className="rounded border border-ink/20 px-2 py-1 text-sm bg-white"
+              className="rounded-control border border-ink/15 px-3 py-1.5 text-sm bg-white text-ink font-medium"
             >
               <option value="recent">Plus récents</option>
               <option value="popularite">Popularité</option>
@@ -233,23 +278,57 @@ export default function Home() {
         </>
       )}
 
-      <main className="px-4 pb-24 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+      <main
+        key={tab}
+        className="animate-fade-in px-4 pb-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto"
+      >
         {!selectedCity && (
-          <div className="col-span-full text-center py-16">
-            <p className="text-ink/60 mb-4">Choisis une ville pour découvrir les bons plans autour de toi.</p>
-            <Link href="/ville" className="text-teal underline font-medium">
-              Choisir une ville
-            </Link>
-          </div>
+          <EmptyState
+            icon={MapPinOff}
+            title="Choisis une ville"
+            description="Découvre les bons plans des commerçants autour de toi."
+            action={
+              <Link
+                href="/ville"
+                className="press inline-block rounded-control bg-teal text-white px-5 py-2.5 text-sm font-semibold shadow-soft"
+              >
+                Choisir une ville
+              </Link>
+            }
+          />
         )}
 
-        {selectedCity && !feedLoading && displayedDeals.length === 0 && (
-          <p className="text-ink/50 text-sm col-span-full text-center py-10">
-            Aucun bon plan dans cette catégorie pour l&apos;instant.
-          </p>
+        {selectedCity && feedLoading && (
+          <>
+            <DealCardSkeleton />
+            <DealCardSkeleton />
+            <DealCardSkeleton />
+            <DealCardSkeleton />
+          </>
+        )}
+
+        {selectedCity && !feedLoading && feedError && (
+          <ErrorState
+            title="Le fil n'a pas pu être chargé"
+            description="Vérifie ta connexion internet et réessaie."
+            onRetry={() => setReloadTick((t) => t + 1)}
+          />
+        )}
+
+        {selectedCity && !feedLoading && !feedError && displayedDeals.length === 0 && (
+          <EmptyState
+            title="Aucun bon plan pour l'instant"
+            description={
+              categoryId
+                ? "Essaie une autre catégorie, ou reviens bientôt."
+                : "Reviens bientôt, ou suis un commerçant pour être prévenu à sa prochaine publication."
+            }
+          />
         )}
 
         {selectedCity &&
+          !feedLoading &&
+          !feedError &&
           displayedDeals.map((deal) => (
             <DealCard
               key={`${deal.id}:${likedIds.has(deal.id)}:${favoritedIds.has(deal.id)}:${repostedIds.has(deal.id)}`}
@@ -259,6 +338,7 @@ export default function Home() {
               liked={likedIds.has(deal.id)}
               favorited={favoritedIds.has(deal.id)}
               reposted={repostedIds.has(deal.id)}
+              categoryIcone={deal.category_id ? categoryIcones.get(deal.category_id) : null}
             />
           ))}
       </main>

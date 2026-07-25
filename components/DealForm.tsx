@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ImagePlus, X, AlertTriangle, Tag, Percent } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { FormInput, FormTextarea, FormSelect } from "@/components/ui/FormField";
+import { Spinner } from "@/components/ui/Spinner";
 
 type Category = { id: string; nom: string };
 type MerchantCity = { city_id: string; cities: { nom: string; code_postal: string } | null };
@@ -58,10 +61,11 @@ export function DealForm({ merchantId, existingDeal }: Props) {
   const [dateFin, setDateFin] = useState(toDateInputValue(existingDeal?.date_fin ?? null));
   const [stockLimite, setStockLimite] = useState(existingDeal?.stock_limite?.toString() ?? "");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<string[]>(existingDeal?.photos ?? []);
 
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"brouillon" | "publie" | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,6 +119,16 @@ export function DealForm({ merchantId, existingDeal }: Props) {
     );
   }
 
+  function handlePhotoChange(files: FileList | null) {
+    const list = Array.from(files ?? []);
+    setPhotoFiles(list);
+    setPhotoPreviews(list.map((f) => URL.createObjectURL(f)));
+  }
+
+  function removeExistingPhoto(url: string) {
+    setExistingPhotos((prev) => prev.filter((p) => p !== url));
+  }
+
   async function handleSubmit(statut: "brouillon" | "publie") {
     setError(null);
 
@@ -131,7 +145,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       return;
     }
 
-    setLoading(true);
+    setLoading(statut);
 
     const {
       data: { user },
@@ -139,7 +153,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
     if (!user) {
       setError("Session expirée, reconnecte-toi.");
-      setLoading(false);
+      setLoading(null);
       return;
     }
 
@@ -151,7 +165,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
         .upload(path, file);
       if (uploadError) {
         setError(`Échec de l'upload d'une photo : ${uploadError.message}`);
-        setLoading(false);
+        setLoading(null);
         return;
       }
       uploadedUrls.push(supabase.storage.from("deal-photos").getPublicUrl(path).data.publicUrl);
@@ -184,7 +198,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
         ? "Passez à l'offre payante pour publier plus d'annonces."
         : dealResult.error.message;
       setError(message);
-      setLoading(false);
+      setLoading(null);
       return;
     }
 
@@ -197,7 +211,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       .from("deal_cities")
       .insert(selectedCityIds.map((city_id) => ({ deal_id: dealId, city_id })));
 
-    setLoading(false);
+    setLoading(null);
 
     if (citiesError) {
       setError(citiesError.message);
@@ -209,71 +223,82 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
   if (merchantCities.length === 0) {
     return (
-      <p className="text-ink/70">
-        Tu dois d&apos;abord ajouter au moins une ville de diffusion depuis{" "}
-        <a href="/compte" className="text-teal underline">
-          Mon compte
-        </a>
-        .
-      </p>
+      <div className="bg-white rounded-card shadow-soft border border-ink/8 p-6 text-center">
+        <p className="text-ink/70 text-sm">
+          Tu dois d&apos;abord ajouter au moins une ville de diffusion depuis{" "}
+          <a href="/compte" className="text-teal underline font-medium">
+            Mon compte
+          </a>
+          .
+        </p>
+      </div>
     );
   }
 
+  const allPhotos = [...existingPhotos, ...photoPreviews];
+
   return (
-    <div className="w-full max-w-sm">
-      <label className="block mb-3">
-        <span className="text-sm text-ink/70">Titre</span>
-        <input
-          type="text"
-          value={titre}
-          onChange={(e) => setTitre(e.target.value)}
-          className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-        />
-      </label>
+    <div className="w-full max-w-sm bg-white rounded-card shadow-soft border border-ink/8 p-5">
+      <FormInput label="Titre" type="text" value={titre} onChange={(e) => setTitre(e.target.value)} />
 
-      <label className="block mb-3">
-        <span className="text-sm text-ink/70">Description</span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-        />
-      </label>
+      <FormTextarea
+        label="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        rows={3}
+      />
 
-      <label className="block mb-3">
-        <span className="text-sm text-ink/70">Photos</span>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setPhotoFiles(Array.from(e.target.files ?? []))}
-          className="mt-1 w-full text-sm"
-        />
-        {existingPhotos.length > 0 && (
-          <p className="text-xs text-ink/50 mt-1">{existingPhotos.length} photo(s) déjà en ligne</p>
-        )}
-      </label>
-
-      <fieldset className="mb-3">
-        <legend className="text-sm text-ink/70 mb-1">Réduction</legend>
-        <div className="flex gap-4 mb-2">
-          <label className="flex items-center gap-2">
+      <label className="block mb-3.5">
+        <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Photos</span>
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          {allPhotos.map((url, i) => (
+            <div key={url + i} className="relative w-16 h-16 rounded-control overflow-hidden group">
+              <img src={url} alt="" className="w-full h-full object-cover" />
+              {i < existingPhotos.length && (
+                <button
+                  type="button"
+                  onClick={() => removeExistingPhoto(url)}
+                  className="press absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-ink/70 text-white flex items-center justify-center"
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+          ))}
+          <label className="press w-16 h-16 rounded-control border-2 border-dashed border-ink/20 flex items-center justify-center cursor-pointer text-ink/35 hover:border-teal hover:text-teal">
+            <ImagePlus size={20} />
             <input
-              type="radio"
-              checked={priceMode === "prix"}
-              onChange={() => setPriceMode("prix")}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handlePhotoChange(e.target.files)}
             />
-            Prix avant/après
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              checked={priceMode === "pourcentage"}
-              onChange={() => setPriceMode("pourcentage")}
-            />
-            % de réduction
-          </label>
+        </div>
+      </label>
+
+      <fieldset className="mb-3.5">
+        <legend className="text-xs font-semibold text-ink/50 uppercase tracking-wide mb-1.5">Réduction</legend>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <button
+            type="button"
+            onClick={() => setPriceMode("prix")}
+            className={`press flex items-center justify-center gap-1.5 rounded-control border py-2 text-sm font-medium transition-colors ${
+              priceMode === "prix" ? "border-teal bg-teal/8 text-teal" : "border-ink/15 text-ink/60"
+            }`}
+          >
+            <Tag size={14} /> Prix avant/après
+          </button>
+          <button
+            type="button"
+            onClick={() => setPriceMode("pourcentage")}
+            className={`press flex items-center justify-center gap-1.5 rounded-control border py-2 text-sm font-medium transition-colors ${
+              priceMode === "pourcentage" ? "border-teal bg-teal/8 text-teal" : "border-ink/15 text-ink/60"
+            }`}
+          >
+            <Percent size={14} /> Réduction
+          </button>
         </div>
 
         {priceMode === "prix" ? (
@@ -285,7 +310,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
               placeholder="Prix avant"
               value={prixAvant}
               onChange={(e) => setPrixAvant(e.target.value)}
-              className="w-1/2 rounded border border-ink/20 px-3 py-2"
+              className="w-1/2 rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
             />
             <input
               type="number"
@@ -294,7 +319,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
               placeholder="Prix après"
               value={prixApres}
               onChange={(e) => setPrixApres(e.target.value)}
-              className="w-1/2 rounded border border-ink/20 px-3 py-2"
+              className="w-1/2 rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
             />
           </div>
         ) : (
@@ -305,98 +330,88 @@ export function DealForm({ merchantId, existingDeal }: Props) {
             placeholder="% de réduction"
             value={reductionPourcentage}
             onChange={(e) => setReductionPourcentage(e.target.value)}
-            className="w-full rounded border border-ink/20 px-3 py-2"
+            className="w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
           />
         )}
       </fieldset>
 
-      <label className="block mb-3">
-        <span className="text-sm text-ink/70">Catégorie</span>
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-        >
-          <option value="">— Choisir —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nom}
-            </option>
-          ))}
-        </select>
-      </label>
+      <FormSelect label="Catégorie" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+        <option value="">— Choisir —</option>
+        {categories.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.nom}
+          </option>
+        ))}
+      </FormSelect>
 
-      <fieldset className="mb-3">
-        <legend className="text-sm text-ink/70 mb-1">Villes de diffusion</legend>
-        <div className="space-y-1">
-          {merchantCities.map((mc) => (
-            <label key={mc.city_id} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selectedCityIds.includes(mc.city_id)}
-                onChange={() => toggleCity(mc.city_id)}
-              />
-              {mc.cities?.nom} ({mc.cities?.code_postal})
-            </label>
-          ))}
+      <fieldset className="mb-3.5">
+        <legend className="text-xs font-semibold text-ink/50 uppercase tracking-wide mb-1.5">
+          Villes de diffusion
+        </legend>
+        <div className="flex flex-wrap gap-1.5">
+          {merchantCities.map((mc) => {
+            const active = selectedCityIds.includes(mc.city_id);
+            return (
+              <button
+                type="button"
+                key={mc.city_id}
+                onClick={() => toggleCity(mc.city_id)}
+                className={`press rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  active ? "bg-ink text-white border-ink" : "bg-white text-ink/70 border-ink/15"
+                }`}
+              >
+                {mc.cities?.nom} ({mc.cities?.code_postal})
+              </button>
+            );
+          })}
         </div>
       </fieldset>
 
-      <div className="flex gap-2 mb-3">
-        <label className="block w-1/2">
-          <span className="text-sm text-ink/70">Date de début</span>
-          <input
-            type="date"
-            value={dateDebut}
-            onChange={(e) => setDateDebut(e.target.value)}
-            className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-          />
-        </label>
-        <label className="block w-1/2">
-          <span className="text-sm text-ink/70">Date de fin</span>
-          <input
-            type="date"
-            value={dateFin}
-            onChange={(e) => setDateFin(e.target.value)}
-            className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-          />
-        </label>
+      <div className="flex gap-2">
+        <div className="w-1/2">
+          <FormInput label="Début" type="date" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
+        </div>
+        <div className="w-1/2">
+          <FormInput label="Fin" type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+        </div>
       </div>
 
-      <label className="block mb-6">
-        <span className="text-sm text-ink/70">Stock limité (optionnel)</span>
-        <input
-          type="number"
-          min="0"
-          placeholder="Illimité si vide"
-          value={stockLimite}
-          onChange={(e) => setStockLimite(e.target.value)}
-          className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-        />
-      </label>
+      <FormInput
+        label="Stock limité (optionnel)"
+        type="number"
+        min="0"
+        placeholder="Illimité si vide"
+        value={stockLimite}
+        onChange={(e) => setStockLimite(e.target.value)}
+      />
 
       {duplicateWarning && (
-        <p className="text-marigold text-sm mb-4">⚠️ {duplicateWarning}</p>
+        <p className="flex items-start gap-1.5 text-marigold text-sm bg-marigold/10 rounded-control px-3 py-2.5 mb-4">
+          <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+          {duplicateWarning}
+        </p>
       )}
 
       {error && <p className="text-tag mb-4 text-sm">{error}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-1">
         <button
           type="button"
-          disabled={loading}
+          disabled={loading !== null}
           onClick={() => handleSubmit("brouillon")}
-          className="w-1/2 rounded border border-ink/20 text-ink py-2 font-medium disabled:opacity-50"
+          className="press w-1/2 flex items-center justify-center gap-2 rounded-control border border-ink/15 text-ink py-2.5 text-sm font-semibold disabled:opacity-50"
         >
-          Enregistrer en brouillon
+          {loading === "brouillon" && <Spinner size={14} />}
+          Brouillon
         </button>
         <button
           type="button"
-          disabled={loading}
+          disabled={loading !== null}
           onClick={() => handleSubmit("publie")}
-          className="w-1/2 rounded bg-teal text-white py-2 font-medium disabled:opacity-50"
+          className="press w-1/2 flex items-center justify-center gap-2 rounded-control bg-teal text-white py-2.5 text-sm font-semibold shadow-soft disabled:opacity-50"
         >
-          {loading ? "..." : "Publier"}
+          {loading === "publie" && <Spinner size={14} />}
+          Publier
         </button>
       </div>
     </div>

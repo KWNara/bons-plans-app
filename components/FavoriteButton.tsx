@@ -16,6 +16,7 @@ export function FavoriteButton({ dealId, userId, initialFavorited, className }: 
   const router = useRouter();
   const [favorited, setFavorited] = useState(initialFavorited);
   const [busy, setBusy] = useState(false);
+  const [pop, setPop] = useState(false);
 
   async function toggle(e: React.MouseEvent) {
     e.preventDefault();
@@ -32,14 +33,19 @@ export function FavoriteButton({ dealId, userId, initialFavorited, className }: 
       await supabase.from("favorites").delete().eq("user_id", userId).eq("deal_id", dealId);
     } else {
       setFavorited(true);
+      setPop(true);
+      setTimeout(() => setPop(false), 320);
       await supabase.from("favorites").insert({ user_id: userId, deal_id: dealId });
     }
     setBusy(false);
   }
 
   return (
-    <button onClick={toggle} className={className}>
-      <Bookmark size={16} className={favorited ? "fill-ink text-ink" : "text-ink"} />
+    <button onClick={toggle} className={`press ${className ?? ""}`}>
+      <Bookmark
+        size={16}
+        className={`${favorited ? "fill-ink text-ink" : "text-ink"} ${pop ? "animate-pop" : ""}`}
+      />
     </button>
   );
 }

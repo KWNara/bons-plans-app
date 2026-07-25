@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft, Pencil, PackageX } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DealForm } from "@/components/DealForm";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type Loaded = {
   merchantId: string;
@@ -74,24 +78,45 @@ export default function ModifierBonPlanPage() {
 
   if (state === "loading") {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-ink/60">Chargement...</p>
+      <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+        <div className="max-w-sm mx-auto">
+          <Skeleton className="h-96 w-full rounded-card" />
+        </div>
       </main>
     );
   }
 
   if (state === "not-found") {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-ink/60">Ce bon plan n&apos;existe pas ou ne t&apos;appartient pas.</p>
+      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
+        <EmptyState
+          icon={PackageX}
+          title="Introuvable"
+          description="Ce bon plan n'existe pas ou ne t'appartient pas."
+          action={
+            <Link href="/mes-bons-plans" className="press text-teal underline font-medium">
+              Retour à mes bons plans
+            </Link>
+          }
+        />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-12">
-      <div>
-        <h1 className="text-2xl font-bold text-ink mb-6">Modifier le bon plan</h1>
+    <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+      <div className="max-w-sm mx-auto">
+        <Link
+          href="/mes-bons-plans"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          aria-label="Retour"
+        >
+          <ChevronLeft size={20} className="text-ink" />
+        </Link>
+        <div className="flex items-center gap-2 mb-4">
+          <Pencil size={18} className="text-teal" />
+          <h1 className="text-xl font-extrabold text-ink">Modifier le bon plan</h1>
+        </div>
         <DealForm merchantId={loaded!.merchantId} existingDeal={loaded!.deal} />
       </div>
     </main>

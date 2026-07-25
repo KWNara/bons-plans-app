@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronLeft, MapPin, ShieldCheck, Clock, Store, Repeat2, Bookmark, LogOut, Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type Profile = {
   pseudo: string;
@@ -39,6 +41,37 @@ type DealSummary = {
   merchant_profiles: { nom_enseigne: string } | null;
 };
 
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-card border border-ink/8 bg-white shadow-soft p-4 mb-4 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function CardLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-2">{children}</p>;
+}
+
+function DealRow({ deal }: { deal: DealSummary }) {
+  return (
+    <Link
+      href={`/bons-plans/${deal.id}`}
+      className="press flex items-center gap-3 -mx-1.5 px-1.5 py-1.5 rounded-control hover:bg-paper"
+    >
+      {deal.photos[0] ? (
+        <img src={deal.photos[0]} alt="" className="w-11 h-11 rounded-control object-cover shrink-0" />
+      ) : (
+        <div className="w-11 h-11 rounded-control bg-ink/5 shrink-0" />
+      )}
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-ink truncate">{deal.titre}</span>
+        <span className="block text-xs text-ink/45 truncate">{deal.merchant_profiles?.nom_enseigne}</span>
+      </span>
+    </Link>
+  );
+}
+
 export default function ComptePage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
@@ -53,6 +86,8 @@ export default function ComptePage() {
 
   const [bio, setBio] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
@@ -144,6 +179,11 @@ export default function ComptePage() {
     if (merchant) loadDiffusionCities(merchant.id);
   }
 
+  function handleAvatarChange(file: File | null) {
+    setAvatarFile(file);
+    setAvatarPreview(file ? URL.createObjectURL(file) : null);
+  }
+
   async function handleSaveProfile() {
     if (!userId) return;
     setSavingProfile(true);
@@ -176,6 +216,8 @@ export default function ComptePage() {
 
     setProfile((p) => (p ? { ...p, bio: bio.trim() || null, avatar_url } : p));
     setAvatarFile(null);
+    setAvatarPreview(null);
+    setEditingProfile(false);
     setProfileMessage("Profil mis à jour.");
   }
 
@@ -186,116 +228,182 @@ export default function ComptePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-ink/60">Chargement...</p>
+      <main className="min-h-screen bg-paper px-4 pt-6 pb-16">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="w-16 h-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          </div>
+          <Skeleton className="h-24 w-full rounded-card mb-4" />
+          <Skeleton className="h-16 w-full rounded-card mb-4" />
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-ink mb-6">Mon compte</h1>
+    <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+      <div className="max-w-md mx-auto">
+        <Link
+          href="/"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          aria-label="Retour au fil"
+        >
+          <ChevronLeft size={20} className="text-ink" />
+        </Link>
 
-        <div className="rounded border border-ink/10 bg-white/50 p-4 mb-4">
-          <div className="flex items-center gap-3 mb-3">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-ink/10 flex items-center justify-center font-bold text-ink/50">
-                {profile?.pseudo?.[0]?.toUpperCase()}
-              </div>
-            )}
-            <div>
-              <p className="font-medium">{profile?.pseudo}</p>
-              <p className="text-sm text-ink/60">{profile?.email}</p>
+        <Card>
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              {avatarPreview || profile?.avatar_url ? (
+                <img
+                  src={avatarPreview ?? profile!.avatar_url!}
+                  alt=""
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-teal/15 flex items-center justify-center font-bold text-teal text-lg">
+                  {profile?.pseudo?.[0]?.toUpperCase()}
+                </div>
+              )}
+              {editingProfile && (
+                <label className="press absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center cursor-pointer shadow-soft">
+                  <Camera size={12} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleAvatarChange(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              )}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-ink truncate">{profile?.pseudo}</p>
+              <p className="text-sm text-ink/50 truncate">{profile?.email}</p>
+              <span
+                className={`inline-flex items-center gap-1 mt-1.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  profile?.role === "commercant"
+                    ? "bg-teal/10 text-teal"
+                    : profile?.role === "admin"
+                      ? "bg-ink text-white"
+                      : "bg-ink/10 text-ink/60"
+                }`}
+              >
+                {profile?.role === "commercant" ? (
+                  <>
+                    <Store size={11} /> Commerçant
+                  </>
+                ) : profile?.role === "admin" ? (
+                  "Admin"
+                ) : (
+                  "Particulier"
+                )}
+              </span>
+            </div>
+            {!editingProfile && (
+              <button
+                onClick={() => setEditingProfile(true)}
+                className="press text-xs font-semibold text-teal shrink-0"
+              >
+                Modifier
+              </button>
+            )}
           </div>
 
-          <label className="block mb-2">
-            <span className="text-sm text-ink/60">Photo de profil</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-              className="mt-1 w-full text-sm"
-            />
-          </label>
+          {editingProfile && (
+            <div className="mt-4 pt-4 border-t border-ink/8 animate-fade-in">
+              <label className="block mb-3">
+                <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Bio</span>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={2}
+                  placeholder="Quelques mots sur toi..."
+                  className="mt-1.5 w-full rounded-control border border-ink/15 px-3 py-2 text-sm focus:border-teal"
+                />
+              </label>
 
-          <label className="block mb-2">
-            <span className="text-sm text-ink/60">Bio</span>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={2}
-              className="mt-1 w-full rounded border border-ink/20 px-3 py-2 text-sm"
-            />
-          </label>
+              {profileMessage && <p className="text-sm text-teal mb-2">{profileMessage}</p>}
 
-          {profileMessage && <p className="text-sm text-teal mb-2">{profileMessage}</p>}
-
-          <button
-            onClick={handleSaveProfile}
-            disabled={savingProfile}
-            className="w-full rounded border border-teal text-teal py-1.5 text-sm font-medium disabled:opacity-50"
-          >
-            {savingProfile ? "..." : "Enregistrer le profil"}
-          </button>
-
-          <p className="text-sm text-ink/60 mt-4">Statut</p>
-          <p className="font-medium">
-            {profile?.role === "commercant"
-              ? "Commerçant"
-              : profile?.role === "admin"
-                ? "Admin"
-                : "Particulier"}
-          </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditingProfile(false);
+                    setAvatarFile(null);
+                    setAvatarPreview(null);
+                  }}
+                  className="press flex-1 rounded-control border border-ink/15 text-ink py-2 text-sm font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={savingProfile}
+                  className="press flex-1 rounded-control bg-teal text-white py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  {savingProfile ? "..." : "Enregistrer"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {profile?.role === "commercant" && merchant && (
-            <>
-              <p className="text-sm text-ink/60 mt-3">Enseigne</p>
-              <p className="font-medium mb-3">{merchant.nom_enseigne}</p>
-
-              <p className="text-sm text-ink/60">Vérification</p>
-              <p className="font-medium">
-                {merchant.statut_verification === "verifie" ? (
-                  <span className="text-teal">✓ Vérifié</span>
-                ) : (
-                  <span className="text-marigold">⏳ En attente de vérification manuelle</span>
-                )}
-              </p>
-            </>
+            <div className="mt-4 pt-4 border-t border-ink/8">
+              <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-1">Enseigne</p>
+              <p className="font-semibold text-ink mb-2">{merchant.nom_enseigne}</p>
+              {merchant.statut_verification === "verifie" ? (
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-teal">
+                  <ShieldCheck size={15} /> Vérifié
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-marigold">
+                  <Clock size={15} /> En attente de vérification manuelle
+                </span>
+              )}
+            </div>
           )}
 
           {profile?.role === "admin" && (
             <Link
               href="/admin/signalements"
-              className="block text-center w-full rounded bg-ink text-white py-2 font-medium mt-3"
+              className="press block text-center w-full rounded-control bg-ink text-white py-2.5 font-medium mt-4"
             >
               Back-office admin
             </Link>
           )}
-        </div>
+        </Card>
 
-        <div className="rounded border border-ink/10 bg-white/50 p-4 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-ink/60">Villes suivies</p>
-            <Link href="/ville" className="text-xs text-teal underline">
+        <Card>
+          <div className="flex items-center justify-between mb-2.5">
+            <CardLabel>Villes suivies</CardLabel>
+            <Link href="/ville" className="press text-xs font-semibold text-teal">
               Gérer
             </Link>
           </div>
           {followedCities.length === 0 ? (
-            <p className="text-sm text-ink/40">Aucune ville suivie.</p>
+            <p className="text-sm text-ink/40">Aucune ville suivie pour l&apos;instant.</p>
           ) : (
-            <p className="text-sm">
-              {followedCities.map((f) => f.cities?.nom).filter(Boolean).join(" · ")}
-            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {followedCities.map((f) => (
+                <span
+                  key={f.id}
+                  className="inline-flex items-center gap-1 text-sm bg-paper rounded-full px-3 py-1"
+                >
+                  <MapPin size={12} className="text-tag" />
+                  {f.cities?.nom}
+                </span>
+              ))}
+            </div>
           )}
-        </div>
+        </Card>
 
         {profile?.role === "commercant" && merchant && (
-          <div className="rounded border border-ink/10 bg-white/50 p-4 mb-4">
-            <p className="text-sm text-ink/60 mb-2">Villes de diffusion</p>
+          <Card>
+            <CardLabel>Villes de diffusion</CardLabel>
 
             <CitySearchInput
               onSelect={handleAddDiffusionCity}
@@ -304,117 +412,80 @@ export default function ComptePage() {
             {cityError && <p className="text-tag text-sm mt-2">{cityError}</p>}
 
             {diffusionCities.length > 0 && (
-              <ul className="mt-3 space-y-2">
+              <div className="flex flex-wrap gap-1.5 mt-3">
                 {diffusionCities.map((dc) => (
-                  <li
+                  <span
                     key={dc.id}
-                    className="flex items-center justify-between rounded border border-ink/10 px-3 py-2"
+                    className="inline-flex items-center gap-1.5 text-sm bg-paper rounded-full pl-3 pr-1.5 py-1"
                   >
-                    <span>
-                      {dc.cities?.nom} ({dc.cities?.code_postal})
-                    </span>
+                    {dc.cities?.nom}
                     <button
                       type="button"
                       onClick={() => handleRemoveDiffusionCity(dc.id)}
-                      className="text-tag text-sm"
+                      aria-label="Retirer"
+                      className="press w-5 h-5 rounded-full hover:bg-tag/10 text-ink/40 hover:text-tag flex items-center justify-center text-base leading-none"
                     >
-                      Retirer
+                      ×
                     </button>
-                  </li>
+                  </span>
                 ))}
-              </ul>
+              </div>
             )}
 
             <div className="flex gap-2 mt-4">
               <Link
                 href="/mes-bons-plans"
-                className="flex-1 text-center rounded border border-teal text-teal py-2 font-medium"
+                className="press flex-1 text-center rounded-control border border-teal text-teal py-2.5 text-sm font-semibold"
               >
                 Mes bons plans
               </Link>
               <Link
                 href={`/commercant/${merchant.id}`}
-                className="flex-1 text-center rounded border border-ink/20 text-ink py-2 font-medium"
+                className="press flex-1 text-center rounded-control border border-ink/15 text-ink py-2.5 text-sm font-semibold"
               >
-                Voir ma vitrine
+                Ma vitrine
               </Link>
             </div>
 
             <Link
               href="/mon-abonnement"
-              className="block text-center w-full rounded border border-marigold text-ink py-2 font-medium mt-2"
+              className="press block text-center w-full rounded-control bg-marigold/15 text-ink py-2.5 text-sm font-semibold mt-2"
             >
               Mon abonnement
             </Link>
-          </div>
+          </Card>
         )}
 
         {reposts.length > 0 && (
-          <div className="rounded border border-ink/10 bg-white/50 p-4 mb-4">
-            <p className="text-sm text-ink/60 mb-2">Mes bons plans repartagés</p>
-            <ul className="space-y-2">
-              {reposts.map(
-                (r) =>
-                  r.deals && (
-                    <li key={r.id}>
-                      <Link
-                        href={`/bons-plans/${r.deals.id}`}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        {r.deals.photos[0] && (
-                          <img
-                            src={r.deals.photos[0]}
-                            alt=""
-                            className="w-10 h-10 rounded object-cover"
-                          />
-                        )}
-                        <span>
-                          {r.deals.titre}
-                          <span className="text-ink/50"> — {r.deals.merchant_profiles?.nom_enseigne}</span>
-                        </span>
-                      </Link>
-                    </li>
-                  )
-              )}
-            </ul>
-          </div>
+          <Card>
+            <CardLabel>
+              <span className="inline-flex items-center gap-1.5">
+                <Repeat2 size={13} /> Repartagés
+              </span>
+            </CardLabel>
+            <div className="space-y-0.5">
+              {reposts.map((r) => r.deals && <DealRow key={r.id} deal={r.deals} />)}
+            </div>
+          </Card>
         )}
 
         {favorites.length > 0 && (
-          <div className="rounded border border-ink/10 bg-white/50 p-4 mb-4">
-            <p className="text-sm text-ink/60 mb-2">Mes favoris (privé)</p>
-            <ul className="space-y-2">
-              {favorites.map(
-                (f) =>
-                  f.deals && (
-                    <li key={f.id}>
-                      <Link
-                        href={`/bons-plans/${f.deals.id}`}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        {f.deals.photos[0] && (
-                          <img
-                            src={f.deals.photos[0]}
-                            alt=""
-                            className="w-10 h-10 rounded object-cover"
-                          />
-                        )}
-                        <span>
-                          {f.deals.titre}
-                          <span className="text-ink/50"> — {f.deals.merchant_profiles?.nom_enseigne}</span>
-                        </span>
-                      </Link>
-                    </li>
-                  )
-              )}
-            </ul>
-          </div>
+          <Card>
+            <CardLabel>
+              <span className="inline-flex items-center gap-1.5">
+                <Bookmark size={13} /> Favoris · privé
+              </span>
+            </CardLabel>
+            <div className="space-y-0.5">
+              {favorites.map((f) => f.deals && <DealRow key={f.id} deal={f.deals} />)}
+            </div>
+          </Card>
         )}
 
         {profile?.role === "particulier" && (
           <Link
             href="/devenir-commercant"
-            className="block text-center w-full rounded border border-teal text-teal py-2 font-medium mb-3"
+            className="press block text-center w-full rounded-control border border-teal text-teal py-2.5 font-semibold mb-3"
           >
             Devenir commerçant
           </Link>
@@ -422,8 +493,9 @@ export default function ComptePage() {
 
         <button
           onClick={handleSignOut}
-          className="w-full rounded bg-ink/10 text-ink py-2 font-medium"
+          className="press flex items-center justify-center gap-2 w-full rounded-control bg-ink/8 text-ink/70 py-2.5 font-medium"
         >
+          <LogOut size={15} />
           Se déconnecter
         </button>
       </div>

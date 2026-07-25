@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Send, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type Comment = {
   id: string;
@@ -21,6 +23,7 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
     load();
@@ -45,9 +48,11 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
     }
     if (!text.trim()) return;
 
+    setPosting(true);
     const { error } = await supabase
       .from("comments")
       .insert({ user_id: userId, deal_id: dealId, texte: text.trim() });
+    setPosting(false);
 
     if (!error) {
       setText("");
@@ -56,58 +61,83 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
   }
 
   async function handleDelete(id: string) {
-    await supabase.from("comments").delete().eq("id", id);
     setComments((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("comments").delete().eq("id", id);
   }
 
   return (
-    <div className="mt-6">
-      <p className="text-sm text-ink/60 mb-2">Commentaires ({comments.length})</p>
+    <div className="mt-8 pt-6 border-t border-ink/10">
+      <p className="text-sm font-semibold text-ink mb-3">Commentaires ({comments.length})</p>
 
       {userId ? (
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-5">
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Ajouter un commentaire..."
-            className="flex-1 rounded border border-ink/20 px-3 py-2 text-sm"
+            className="flex-1 rounded-control border border-ink/15 px-3.5 py-2.5 text-sm focus:border-teal"
           />
-          <button type="submit" className="rounded bg-teal text-white px-4 py-2 text-sm font-medium">
-            Publier
+          <button
+            type="submit"
+            disabled={posting || !text.trim()}
+            aria-label="Publier"
+            className="press rounded-control bg-teal text-white w-11 flex items-center justify-center disabled:opacity-40"
+          >
+            <Send size={16} />
           </button>
         </form>
       ) : (
-        <p className="text-sm mb-4">
-          <a href="/connexion" className="text-teal underline">
+        <p className="text-sm mb-5 rounded-control bg-white border border-ink/10 px-3.5 py-2.5">
+          <a href="/connexion" className="text-teal underline font-medium">
             Connecte-toi
           </a>{" "}
           pour commenter.
         </p>
       )}
 
-      {!loading && comments.length === 0 && (
-        <p className="text-sm text-ink/50">Aucun commentaire pour l&apos;instant.</p>
+      {loading && (
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex gap-2.5">
+              <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-1.5 pt-0.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-4/5" />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
-      <ul className="space-y-3">
+      {!loading && comments.length === 0 && (
+        <div className="flex flex-col items-center text-center py-8">
+          <MessageCircle size={22} className="text-ink/20 mb-2" strokeWidth={1.5} />
+          <p className="text-sm text-ink/45">Sois le premier à commenter.</p>
+        </div>
+      )}
+
+      <ul className="space-y-4">
         {comments.map((c) => (
-          <li key={c.id} className="flex gap-2">
-            <div className="w-8 h-8 rounded-full bg-ink/10 flex items-center justify-center text-xs font-bold text-ink/60 overflow-hidden shrink-0">
+          <li key={c.id} className="flex gap-2.5 animate-fade-in">
+            <div className="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center text-xs font-bold text-teal overflow-hidden shrink-0">
               {c.users?.avatar_url ? (
                 <img src={c.users.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 c.users?.pseudo?.[0]?.toUpperCase() ?? "?"
               )}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{c.users?.pseudo}</span>
+                <span className="text-sm font-semibold text-ink">{c.users?.pseudo}</span>
                 <span className="text-xs text-ink/40">{formatDate(c.created_at)}</span>
               </div>
-              <p className="text-sm text-ink/80">{c.texte}</p>
+              <p className="text-sm text-ink/75 break-words">{c.texte}</p>
               {c.user_id === userId && (
-                <button onClick={() => handleDelete(c.id)} className="text-xs text-tag mt-0.5">
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="press text-xs text-ink/40 hover:text-tag mt-0.5"
+                >
                   Supprimer
                 </button>
               )}

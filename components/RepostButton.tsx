@@ -62,32 +62,35 @@ export function RepostButton({ dealId, userId, initialReposted, initialCount, al
 
   return (
     <div>
-      <button onClick={handleClick} className="flex items-center gap-1 text-sm">
+      <button
+        onClick={handleClick}
+        className="press flex items-center gap-1.5 text-sm text-ink/60 -m-1.5 p-1.5 rounded-full hover:bg-teal/5"
+      >
         <Repeat2 size={18} className={reposted ? "text-teal" : ""} />
-        {count}
+        <span className={reposted ? "text-teal font-medium" : ""}>{count}</span>
       </button>
 
       {composing && (
-        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Ajouter un commentaire (optionnel)"
             rows={2}
-            className="w-full rounded border border-ink/20 px-2 py-1 text-sm"
+            className="w-full rounded-control border border-ink/15 px-3 py-2 text-sm focus:border-teal"
           />
-          <div className="flex gap-2 mt-1">
+          <div className="flex gap-2 mt-1.5">
             <button
               type="button"
               onClick={() => addRepost(comment.trim() || null)}
-              className="text-sm bg-teal text-white px-3 py-1 rounded"
+              className="press text-sm bg-teal text-white px-3 py-1.5 rounded-control font-medium"
             >
               Repartager
             </button>
             <button
               type="button"
               onClick={() => setComposing(false)}
-              className="text-sm text-ink/50"
+              className="press text-sm text-ink/50 px-3 py-1.5"
             >
               Annuler
             </button>

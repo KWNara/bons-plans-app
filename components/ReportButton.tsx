@@ -19,9 +19,10 @@ type Props = {
   targetId: string;
   userId: string | null | undefined;
   className?: string;
+  iconOnly?: boolean;
 };
 
-export function ReportButton({ targetType, targetId, userId, className }: Props) {
+export function ReportButton({ targetType, targetId, userId, className, iconOnly }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [motif, setMotif] = useState("contenu_trompeur");
@@ -70,21 +71,22 @@ export function ReportButton({ targetType, targetId, userId, className }: Props)
     <>
       <button
         onClick={handleOpen}
-        className={className ?? "flex items-center gap-1 text-sm text-ink/50"}
+        aria-label="Signaler"
+        className={className ?? "press flex items-center gap-1.5 text-sm text-ink/50 hover:text-tag"}
       >
-        <Flag size={16} />
-        Signaler
+        <Flag size={iconOnly ? 17 : 16} />
+        {!iconOnly && "Signaler"}
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-6">
-          <div className="w-full max-w-sm rounded-xl bg-paper p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm px-6 animate-fade-in">
+          <div className="w-full max-w-sm rounded-card bg-paper p-5 shadow-raised">
             {status === "sent" ? (
               <>
                 <p className="text-ink mb-4">Merci, ton signalement a été transmis à l&apos;équipe.</p>
                 <button
                   onClick={() => setOpen(false)}
-                  className="w-full rounded bg-teal text-white py-2 font-medium"
+                  className="press w-full rounded-control bg-teal text-white py-2.5 font-medium"
                 >
                   Fermer
                 </button>
@@ -94,7 +96,7 @@ export function ReportButton({ targetType, targetId, userId, className }: Props)
                 <p className="text-ink mb-4">Tu as déjà signalé ce contenu.</p>
                 <button
                   onClick={() => setOpen(false)}
-                  className="w-full rounded bg-ink/10 text-ink py-2 font-medium"
+                  className="press w-full rounded-control bg-ink/10 text-ink py-2.5 font-medium"
                 >
                   Fermer
                 </button>
@@ -104,29 +106,32 @@ export function ReportButton({ targetType, targetId, userId, className }: Props)
                 <h2 className="text-lg font-bold text-ink mb-3">Signaler</h2>
 
                 <fieldset className="mb-3">
-                  <legend className="text-sm text-ink/70 mb-1">Motif</legend>
-                  <div className="space-y-1">
+                  <legend className="text-sm text-ink/60 mb-2">Motif</legend>
+                  <div className="flex flex-wrap gap-1.5">
                     {MOTIFS.map((m) => (
-                      <label key={m.value} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="radio"
-                          name="motif"
-                          checked={motif === m.value}
-                          onChange={() => setMotif(m.value)}
-                        />
+                      <button
+                        type="button"
+                        key={m.value}
+                        onClick={() => setMotif(m.value)}
+                        className={`press rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                          motif === m.value
+                            ? "bg-ink text-white border-ink"
+                            : "bg-white text-ink/70 border-ink/15"
+                        }`}
+                      >
                         {m.label}
-                      </label>
+                      </button>
                     ))}
                   </div>
                 </fieldset>
 
                 <label className="block mb-4">
-                  <span className="text-sm text-ink/70">Précision (optionnel)</span>
+                  <span className="text-sm text-ink/60">Précision (optionnel)</span>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     rows={2}
-                    className="mt-1 w-full rounded border border-ink/20 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-control border border-ink/15 px-3 py-2 text-sm focus:border-teal"
                   />
                 </label>
 
@@ -135,14 +140,14 @@ export function ReportButton({ targetType, targetId, userId, className }: Props)
                 <div className="flex gap-2">
                   <button
                     onClick={() => setOpen(false)}
-                    className="w-1/2 rounded border border-ink/20 text-ink py-2 font-medium"
+                    className="press w-1/2 rounded-control border border-ink/15 text-ink py-2.5 font-medium"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={status === "sending"}
-                    className="w-1/2 rounded bg-tag text-white py-2 font-medium disabled:opacity-50"
+                    className="press w-1/2 rounded-control bg-tag text-white py-2.5 font-medium disabled:opacity-50"
                   >
                     {status === "sending" ? "..." : "Envoyer"}
                   </button>

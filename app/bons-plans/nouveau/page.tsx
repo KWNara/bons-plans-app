@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronLeft, PlusCircle, ShieldAlert, Clock3, Crown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DealForm } from "@/components/DealForm";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type Gate =
   | { status: "loading" }
@@ -12,6 +15,18 @@ type Gate =
   | { status: "en-attente" }
   | { status: "quota-atteint" }
   | { status: "ok"; merchantId: string };
+
+function BackBar() {
+  return (
+    <Link
+      href="/mes-bons-plans"
+      className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+      aria-label="Retour"
+    >
+      <ChevronLeft size={20} className="text-ink" />
+    </Link>
+  );
+}
 
 export default function NouveauBonPlanPage() {
   const router = useRouter();
@@ -72,56 +87,75 @@ export default function NouveauBonPlanPage() {
 
   if (gate.status === "loading") {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-ink/60">Chargement...</p>
+      <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+        <div className="max-w-sm mx-auto">
+          <BackBar />
+          <Skeleton className="h-96 w-full rounded-card" />
+        </div>
       </main>
     );
   }
 
   if (gate.status === "non-commercant") {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 text-center">
-        <div>
-          <p className="text-ink/70 mb-3">
-            Seuls les comptes commerçants peuvent publier des bons plans.
-          </p>
-          <Link href="/devenir-commercant" className="text-teal underline">
-            Devenir commerçant vérifié
-          </Link>
-        </div>
+      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
+        <EmptyState
+          icon={ShieldAlert}
+          title="Réservé aux commerçants"
+          description="Seuls les comptes commerçants peuvent publier des bons plans."
+          action={
+            <Link
+              href="/devenir-commercant"
+              className="press inline-block rounded-control bg-teal text-white px-5 py-2.5 text-sm font-semibold shadow-soft"
+            >
+              Devenir commerçant vérifié
+            </Link>
+          }
+        />
       </main>
     );
   }
 
   if (gate.status === "en-attente") {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 text-center">
-        <p className="text-marigold">
-          ⏳ Vérification en cours — tu pourras publier des bons plans une fois ton SIRET vérifié.
-        </p>
+      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
+        <EmptyState
+          icon={Clock3}
+          title="Vérification en cours"
+          description="Tu pourras publier des bons plans une fois ton SIRET vérifié."
+        />
       </main>
     );
   }
 
   if (gate.status === "quota-atteint") {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 text-center">
-        <div>
-          <p className="text-tag mb-3">
-            Passez à l&apos;offre payante pour publier plus d&apos;annonces.
-          </p>
-          <Link href="/tarifs" className="text-teal underline font-medium">
-            Voir les tarifs
-          </Link>
-        </div>
+      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
+        <EmptyState
+          icon={Crown}
+          title="Limite du plan gratuit atteinte"
+          description="Passe à l'offre payante pour publier plus d'annonces."
+          action={
+            <Link
+              href="/tarifs"
+              className="press inline-block rounded-control bg-teal text-white px-5 py-2.5 text-sm font-semibold shadow-soft"
+            >
+              Voir les tarifs
+            </Link>
+          }
+        />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-12">
-      <div>
-        <h1 className="text-2xl font-bold text-ink mb-6">Nouveau bon plan</h1>
+    <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+      <div className="max-w-sm mx-auto">
+        <BackBar />
+        <div className="flex items-center gap-2 mb-4">
+          <PlusCircle size={20} className="text-teal" />
+          <h1 className="text-xl font-extrabold text-ink">Nouveau bon plan</h1>
+        </div>
         <DealForm merchantId={gate.merchantId} />
       </div>
     </main>
