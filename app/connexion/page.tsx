@@ -8,7 +8,6 @@ import { supabase } from "@/lib/supabase";
 import { AuthShell } from "@/components/ui/AuthShell";
 import { FormInput } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
-import { GoogleIcon, AppleIcon } from "@/components/ui/BrandIcons";
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -33,13 +32,6 @@ export default function ConnexionPage() {
     }
 
     router.push("/compte");
-  }
-
-  async function handleOAuth(provider: "google" | "apple") {
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/compte` },
-    });
   }
 
   return (
@@ -83,29 +75,6 @@ export default function ConnexionPage() {
         >
           {loading && <Spinner size={16} />}
           {loading ? "Connexion..." : "Se connecter"}
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-xs text-ink/40">
-          <span className="flex-1 h-px bg-ink/10" />
-          ou
-          <span className="flex-1 h-px bg-ink/10" />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => handleOAuth("google")}
-          className="press w-full flex items-center justify-center gap-2.5 rounded-control border border-ink/15 py-2.5 font-medium text-sm text-ink mb-2 hover:bg-paper"
-        >
-          <GoogleIcon size={16} />
-          Continuer avec Google
-        </button>
-        <button
-          type="button"
-          onClick={() => handleOAuth("apple")}
-          className="press w-full flex items-center justify-center gap-2.5 rounded-control border border-ink/15 py-2.5 font-medium text-sm text-ink hover:bg-paper"
-        >
-          <AppleIcon size={16} />
-          Continuer avec Apple
         </button>
 
         <p className="mt-5 text-sm text-ink/60 text-center">
