@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pas de connexion — Bons Plans</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff0e4;
+        color: #20263b;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .card {
+        max-width: 360px;
+        text-align: center;
+      }
+      .icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+        background: rgba(32, 38, 59, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0 0 8px;
+      }
+      p {
+        font-size: 14px;
+        color: rgba(32, 38, 59, 0.6);
+        line-height: 1.5;
+        margin: 0 0 24px;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        font-size: 14px;
+        color: white;
+        background: #2f6e64;
+        border: none;
+        border-radius: 0.85rem;
+        padding: 12px 24px;
+        cursor: pointer;
+      }
+      button:active {
+        transform: scale(0.96);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#20263b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+          <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+          <line x1="12" y1="20" x2="12.01" y2="20"></line>
+        </svg>
+      </div>
+      <h1>Pas de connexion</h1>
+      <p>Impossible de charger Bons Plans pour le moment. Vérifie ta connexion internet et réessaie.</p>
+      <button onclick="location.reload()">Réessayer</button>
+    </div>
+  </body>
+</html>
