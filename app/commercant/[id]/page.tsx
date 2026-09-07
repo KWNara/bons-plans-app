@@ -178,10 +178,10 @@ export default function CommercantVitrinePage() {
             targetId={merchant.id}
             userId={userId}
             iconOnly
-            className="press p-1.5 rounded-full text-ink/35 hover:text-tag hover:bg-tag/5 mt-0.5"
+            className="press p-1.5 rounded-full text-ink/60 hover:text-tag hover:bg-tag/5 mt-0.5"
           />
         </div>
-        <p className="inline-flex items-center gap-1 text-sm text-ink/45 mb-3">
+        <p className="inline-flex items-center gap-1 text-sm text-ink/60 mb-3">
           <Sparkles size={13} className="text-marigold" />
           {engagement} interaction{engagement !== 1 ? "s" : ""} cumulée{engagement !== 1 ? "s" : ""}
         </p>
@@ -191,7 +191,7 @@ export default function CommercantVitrinePage() {
         )}
 
         <div className="mb-8">
-          <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-2.5">
+          <p className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-2.5">
             Bons plans actifs ({actifs.length})
           </p>
           {actifs.length === 0 ? (
@@ -207,7 +207,7 @@ export default function CommercantVitrinePage() {
 
         {passes.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-2.5 inline-flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-2.5 inline-flex items-center gap-1.5">
               <Archive size={12} /> Passés ({passes.length})
             </p>
             <div className="space-y-2">{passes.map((d) => renderDeal(d, true))}</div>

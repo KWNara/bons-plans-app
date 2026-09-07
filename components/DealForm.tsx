@@ -35,9 +35,6 @@ type Props = {
   existingDeal?: ExistingDeal;
 };
 
-// Les dates sont stockées bornées sur la journée locale (cf. startOfDayIso) :
-// « 10 septembre 00 h 00 » à Paris vaut « 9 septembre 22 h 00 » en UTC. Tronquer
-// la chaîne ISO afficherait donc la veille dans le formulaire d'édition.
 // Les messages de Postgres/PostgREST ne sont jamais montrables à un
 // commerçant : ils sont en anglais et parlent de contraintes techniques.
 function humanizeDealError(message: string): string {
@@ -53,6 +50,9 @@ function humanizeDealError(message: string): string {
   return "L'enregistrement a échoué. Vérifie les champs et réessaie.";
 }
 
+// Les dates sont stockées bornées sur la journée locale (cf. startOfDayIso) :
+// « 10 septembre 00 h 00 » à Paris vaut « 9 septembre 22 h 00 » en UTC. Tronquer
+// la chaîne ISO afficherait donc la veille dans le formulaire d'édition.
 function toDateInputValue(iso: string | null): string {
   if (!iso) return "";
 
@@ -365,7 +365,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       />
 
       <label className="block mb-3.5">
-        <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Photos</span>
+        <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">Photos</span>
         <div className="mt-1.5 flex flex-wrap gap-2">
           {allPhotos.map((url, i) => {
             const isExisting = i < existingPhotos.length;
@@ -387,7 +387,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
               </div>
             );
           })}
-          <label className="press w-16 h-16 rounded-control border-2 border-dashed border-ink/20 flex items-center justify-center cursor-pointer text-ink/40 hover:border-teal hover:text-teal">
+          <label className="press w-16 h-16 rounded-control border-2 border-dashed border-ink/20 flex items-center justify-center cursor-pointer text-ink/60 hover:border-teal hover:text-teal">
             <ImagePlus size={20} />
             <span className="sr-only">Ajouter des photos</span>
             <input
@@ -407,7 +407,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       </label>
 
       <fieldset className="mb-3.5">
-        <legend className="text-xs font-semibold text-ink/50 uppercase tracking-wide mb-1.5">Réduction</legend>
+        <legend className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1.5">Réduction</legend>
         <div className="grid grid-cols-2 gap-2 mb-2">
           <button
             type="button"
@@ -473,7 +473,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       </FormSelect>
 
       <fieldset className="mb-3.5">
-        <legend className="text-xs font-semibold text-ink/50 uppercase tracking-wide mb-1.5">
+        <legend className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1.5">
           Villes de diffusion
         </legend>
         <div className="flex flex-wrap gap-1.5">

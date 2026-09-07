@@ -54,7 +54,7 @@ export default function ConnexionPage() {
         />
 
         <label className="block mb-4">
-          <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Mot de passe</span>
+          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">Mot de passe</span>
           <div className="relative mt-1.5">
             <input
               type={showPassword ? "text" : "password"}
@@ -67,7 +67,7 @@ export default function ConnexionPage() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              className="press absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/40 hover:text-ink"
+              className="press absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/60 hover:text-ink"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -85,7 +85,7 @@ export default function ConnexionPage() {
           {loading ? "Connexion..." : "Se connecter"}
         </button>
 
-        <div className="my-5 flex items-center gap-3 text-xs text-ink/40">
+        <div className="my-5 flex items-center gap-3 text-xs text-ink/60">
           <span className="flex-1 h-px bg-ink/10" />
           ou
           <span className="flex-1 h-px bg-ink/10" />

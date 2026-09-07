@@ -15,7 +15,7 @@ export function EmptyState({ icon: Icon = PackageSearch, title, description, act
         <Icon size={28} className="text-teal" strokeWidth={1.75} />
       </div>
       <p className="font-semibold text-ink mb-1">{title}</p>
-      {description && <p className="text-sm text-ink/50 max-w-xs">{description}</p>}
+      {description && <p className="text-sm text-ink/60 max-w-xs">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

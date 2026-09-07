@@ -22,6 +22,22 @@ export function LikeButton({ dealId, userId, initialLiked, initialCount, onToggl
   const [busy, setBusy] = useState(false);
   const [pop, setPop] = useState(false);
 
+  // Les likes de l'utilisateur arrivent après le premier rendu des cartes.
+  // Sans cette reprise, le bouton reste figé sur son état initial « non liké »
+  // et n'affiche jamais les likes déjà enregistrés.
+  const [syncedLiked, setSyncedLiked] = useState(initialLiked);
+  const [syncedCount, setSyncedCount] = useState(initialCount);
+
+  if (initialLiked !== syncedLiked) {
+    setSyncedLiked(initialLiked);
+    setLiked(initialLiked);
+  }
+
+  if (initialCount !== syncedCount) {
+    setSyncedCount(initialCount);
+    setCount(initialCount);
+  }
+
   async function toggle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -36,7 +52,7 @@ export function LikeButton({ dealId, userId, initialLiked, initialCount, onToggl
     const previousCount = count;
 
     setLiked(!wasLiked);
-    setCount((c) => (wasLiked ? c - 1 : c + 1));
+    setCount((c) => Math.max(0, wasLiked ? c - 1 : c + 1));
     onToggled?.(!wasLiked);
 
     if (!wasLiked) {

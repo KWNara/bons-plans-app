@@ -30,6 +30,20 @@ export function RepostButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
 
+  // Les repartages de l'utilisateur arrivent après le premier rendu des cartes.
+  const [syncedReposted, setSyncedReposted] = useState(initialReposted);
+  const [syncedCount, setSyncedCount] = useState(initialCount);
+
+  if (initialReposted !== syncedReposted) {
+    setSyncedReposted(initialReposted);
+    setReposted(initialReposted);
+  }
+
+  if (initialCount !== syncedCount) {
+    setSyncedCount(initialCount);
+    setCount(initialCount);
+  }
+
   async function removeRepost() {
     if (busy) return;
     setBusy(true);
@@ -37,7 +51,7 @@ export function RepostButton({
 
     const previousCount = count;
     setReposted(false);
-    setCount((c) => c - 1);
+    setCount((c) => Math.max(0, c - 1));
     onToggled?.(false);
 
     const { error: deleteError } = await supabase
@@ -136,7 +150,7 @@ export function RepostButton({
             <button
               type="button"
               onClick={() => setComposing(false)}
-              className="press text-sm text-ink/50 px-3 py-1.5"
+              className="press text-sm text-ink/60 px-3 py-1.5"
             >
               Annuler
             </button>

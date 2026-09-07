@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronLeft, MapPin, BellPlus, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
+import { FormInput, FormSelect } from "@/components/ui/FormField";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Spinner } from "@/components/ui/Spinner";
 
 type Category = { id: string; nom: string };
 
@@ -30,6 +36,7 @@ export default function AlertesPage() {
   const [budgetMax, setBudgetMax] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [busyRuleId, setBusyRuleId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -89,7 +96,7 @@ export default function AlertesPage() {
     setCreating(false);
 
     if (insertError) {
-      setError(insertError.message);
+      setError("L'alerte n'a pas pu être créée. Réessaie dans un instant.");
       return;
     }
 
@@ -101,13 +108,44 @@ export default function AlertesPage() {
   }
 
   async function handleToggle(rule: AlertRule) {
-    await supabase.from("alert_rules").update({ actif: !rule.actif }).eq("id", rule.id);
-    if (userId) loadRules(userId);
+    if (busyRuleId) return;
+
+    setError(null);
+    setBusyRuleId(rule.id);
+
+    const { error: toggleError } = await supabase
+      .from("alert_rules")
+      .update({ actif: !rule.actif })
+      .eq("id", rule.id);
+
+    if (toggleError) {
+      setError("Le changement n'a pas pu être enregistré.");
+    } else if (userId) {
+      await loadRules(userId);
+    }
+
+    setBusyRuleId(null);
   }
 
-  async function handleDelete(id: string) {
-    await supabase.from("alert_rules").delete().eq("id", id);
-    setRules((prev) => prev.filter((r) => r.id !== id));
+  async function handleDelete(rule: AlertRule) {
+    if (busyRuleId) return;
+
+    const confirmed = window.confirm("Supprimer définitivement cette alerte ?");
+    if (!confirmed) return;
+
+    setError(null);
+    setBusyRuleId(rule.id);
+
+    const { error: deleteError } = await supabase.from("alert_rules").delete().eq("id", rule.id);
+
+    setBusyRuleId(null);
+
+    if (deleteError) {
+      setError("La suppression a échoué. L'alerte est toujours active.");
+      return;
+    }
+
+    setRules((prev) => prev.filter((r) => r.id !== rule.id));
   }
 
   async function handleCitySelect(suggestion: BanSuggestion) {
@@ -115,116 +153,143 @@ export default function AlertesPage() {
     try {
       const resolved = await resolveCity(suggestion);
       setCity(resolved);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inconnue.");
+    } catch {
+      setError("Cette ville n'a pas pu être enregistrée. Réessaie dans un instant.");
     }
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-ink/60">Chargement...</p>
+      <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+        <div className="max-w-sm mx-auto">
+          <Skeleton className="h-64 w-full rounded-card mb-4" />
+          <Skeleton className="h-16 w-full rounded-card" />
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-ink mb-2">Mes alertes</h1>
-        <p className="text-sm text-ink/60 mb-6">
+    <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+      <div className="max-w-sm mx-auto">
+        <Link
+          href="/"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          aria-label="Retour au fil"
+        >
+          <ChevronLeft size={20} className="text-ink" />
+        </Link>
+
+        <h1 className="text-2xl font-extrabold text-ink mb-1">Mes alertes</h1>
+        <p className="text-sm text-ink/70 mb-5">
           Sois prévenu par email dès qu&apos;un bon plan correspond à tes critères.
         </p>
 
-        <form onSubmit={handleCreate} className="rounded border border-ink/10 bg-white/50 p-4 mb-6">
-          <label className="block mb-3">
-            <span className="text-sm text-ink/70">Ville</span>
-            <div className="mt-1">
-              <CitySearchInput onSelect={handleCitySelect} placeholder="Rechercher une ville" />
-            </div>
-            {city && <p className="text-sm text-teal mt-1">{city.nom} ({city.code_postal})</p>}
-          </label>
+        <form
+          onSubmit={handleCreate}
+          className="bg-white rounded-card shadow-soft border border-ink/10 p-4 mb-6"
+        >
+          <div className="mb-3.5">
+            <CitySearchInput onSelect={handleCitySelect} label="Ville" placeholder="Rechercher une ville" />
+            {city && (
+              <p className="flex items-center gap-1.5 text-sm font-medium text-teal mt-1.5">
+                <MapPin size={14} />
+                {city.nom} ({city.code_postal})
+              </p>
+            )}
+          </div>
 
-          <label className="block mb-3">
-            <span className="text-sm text-ink/70">Catégorie</span>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-            >
-              <option value="">— Choisir —</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nom}
-                </option>
-              ))}
-            </select>
-          </label>
+          <FormSelect
+            label="Catégorie"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="">— Choisir —</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nom}
+              </option>
+            ))}
+          </FormSelect>
 
-          <label className="block mb-3">
-            <span className="text-sm text-ink/70">Mots-clés (optionnel)</span>
-            <input
-              type="text"
-              value={motsCles}
-              onChange={(e) => setMotsCles(e.target.value)}
-              placeholder="ex : viennoiserie"
-              className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-            />
-          </label>
+          <FormInput
+            label="Mots-clés (optionnel)"
+            type="text"
+            value={motsCles}
+            onChange={(e) => setMotsCles(e.target.value)}
+            placeholder="ex : viennoiserie"
+          />
 
-          <label className="block mb-4">
-            <span className="text-sm text-ink/70">Budget maximum en € (optionnel)</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={budgetMax}
-              onChange={(e) => setBudgetMax(e.target.value)}
-              className="mt-1 w-full rounded border border-ink/20 px-3 py-2"
-            />
-          </label>
+          <FormInput
+            label="Budget maximum en € (optionnel)"
+            type="number"
+            min="0"
+            step="0.01"
+            value={budgetMax}
+            onChange={(e) => setBudgetMax(e.target.value)}
+          />
 
           {error && <p className="text-tag text-sm mb-3">{error}</p>}
 
           <button
             type="submit"
             disabled={creating}
-            className="w-full rounded bg-teal text-white py-2 font-medium disabled:opacity-50"
+            className="press w-full flex items-center justify-center gap-2 rounded-control bg-teal text-white py-3 font-semibold shadow-soft disabled:opacity-50 mt-1"
           >
-            {creating ? "..." : "Créer l'alerte"}
+            {creating && <Spinner size={16} />}
+            {creating ? "Création…" : "Créer l'alerte"}
           </button>
         </form>
 
         {rules.length === 0 ? (
-          <p className="text-ink/50 text-sm">Aucune alerte pour l&apos;instant.</p>
+          <EmptyState
+            icon={BellPlus}
+            title="Aucune alerte"
+            description="Crée une alerte pour être prévenu dès qu'un bon plan correspond à ce que tu cherches."
+          />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {rules.map((r) => (
-              <li key={r.id} className="rounded border border-ink/10 bg-white/50 p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">
+              <li key={r.id} className="bg-white rounded-card shadow-soft border border-ink/10 p-3.5">
+                <div className="flex items-start justify-between gap-3 mb-2.5">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink break-words">
                       {r.categories?.nom} · {r.cities?.nom}
                     </p>
                     {(r.mots_cles || r.budget_max) && (
-                      <p className="text-sm text-ink/50">
-                        {r.mots_cles && `"${r.mots_cles}"`}
+                      <p className="text-sm text-ink/70 break-words">
+                        {r.mots_cles && `« ${r.mots_cles} »`}
                         {r.mots_cles && r.budget_max ? " · " : ""}
                         {r.budget_max && `max ${r.budget_max} €`}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleToggle(r)}
-                      className={`text-sm ${r.actif ? "text-teal" : "text-ink/40"}`}
-                    >
-                      {r.actif ? "Active" : "Désactivée"}
-                    </button>
-                    <button onClick={() => handleDelete(r.id)} className="text-tag text-sm">
-                      Supprimer
-                    </button>
-                  </div>
+                  <span
+                    className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${
+                      r.actif ? "bg-teal/10 text-teal" : "bg-ink/10 text-ink/70"
+                    }`}
+                  >
+                    {r.actif ? "Active" : "En pause"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleToggle(r)}
+                    disabled={busyRuleId === r.id}
+                    className="press inline-flex items-center gap-1.5 rounded-control border border-ink/15 px-3 py-2 text-sm font-medium text-ink hover:bg-paper disabled:opacity-50"
+                  >
+                    {r.actif ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
+                    {r.actif ? "Mettre en pause" : "Réactiver"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(r)}
+                    disabled={busyRuleId === r.id}
+                    className="press inline-flex items-center gap-1.5 rounded-control px-3 py-2 text-sm font-medium text-tag hover:bg-tag/10 disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                    Supprimer
+                  </button>
                 </div>
               </li>
             ))}

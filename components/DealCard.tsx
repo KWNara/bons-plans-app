@@ -83,12 +83,12 @@ export function DealCard({
                 {deal.merchant_profiles?.nom_enseigne}
               </span>
             </span>
-            <span className="text-xs text-ink/45 shrink-0">{formatTimeRemaining(deal.date_fin)}</span>
+            <span className="text-xs text-ink/60 shrink-0">{formatTimeRemaining(deal.date_fin)}</span>
           </div>
           <h3 className="font-bold text-ink leading-snug mb-1 group-hover:text-teal transition-colors">
             {deal.titre}
           </h3>
-          <p className="text-xs text-ink/45 mb-1">{villeLabel}</p>
+          <p className="text-xs text-ink/60 mb-1">{villeLabel}</p>
         </div>
       </Link>
 

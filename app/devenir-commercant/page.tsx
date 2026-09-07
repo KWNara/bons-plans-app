@@ -147,7 +147,7 @@ export default function DevenirCommercantPage() {
             <Store size={22} className="text-teal" strokeWidth={1.75} />
           </div>
           <h1 className="text-xl font-extrabold text-ink mb-1">Devenir commerçant</h1>
-          <p className="text-sm text-ink/50 mb-6 flex items-start gap-1.5">
+          <p className="text-sm text-ink/60 mb-6 flex items-start gap-1.5">
             <ShieldCheck size={15} className="text-teal shrink-0 mt-0.5" />
             Ton SIRET est vérifié automatiquement auprès du registre Sirene.
           </p>
@@ -172,7 +172,7 @@ export default function DevenirCommercantPage() {
                   />
                 </label>
               </div>
-              <p className="text-xs text-ink/45">Logo de ton enseigne (optionnel)</p>
+              <p className="text-xs text-ink/60">Logo de ton enseigne (optionnel)</p>
             </div>
 
             <FormInput

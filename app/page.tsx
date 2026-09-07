@@ -39,8 +39,9 @@ export default function Home() {
     [categories]
   );
 
-  // Le changement d'onglet remonte les cartes : sans mémoriser ici les
-  // interactions, un like posé à l'instant réapparaîtrait comme non-liké.
+  // Le changement d'onglet remonte les cartes, qui repartent alors des données
+  // du dernier chargement : il faut donc répercuter ici l'état ET le compteur,
+  // sinon un like tout juste posé se réaffiche à zéro.
   const rememberInteraction = useCallback(
     (kind: "like" | "favorite" | "repost", dealId: string, active: boolean) => {
       const setter =
@@ -52,6 +53,17 @@ export default function Home() {
         else next.delete(dealId);
         return next;
       });
+
+      if (kind === "favorite") return;
+
+      const field = kind === "like" ? "likes_count" : "reposts_count";
+      setDeals((previous) =>
+        previous.map((deal) =>
+          deal.id === dealId
+            ? { ...deal, [field]: Math.max(0, deal[field] + (active ? 1 : -1)) }
+            : deal
+        )
+      );
     },
     []
   );
@@ -204,7 +216,7 @@ export default function Home() {
           >
             <MapPin size={18} className="text-tag shrink-0" />
             <span className="truncate max-w-[40vw]">{selectedCity ? selectedCity.nom : "Choisir une ville"}</span>
-            <ChevronDown size={16} className="text-ink/40 shrink-0" />
+            <ChevronDown size={16} className="text-ink/60 shrink-0" />
           </Link>
           <nav className="flex items-center gap-1 text-ink/70">
             <Link
@@ -236,30 +248,33 @@ export default function Home() {
           </nav>
         </div>
 
-        <div className="relative flex gap-6 border-b border-ink/10">
-          <button
-            onClick={() => setTab("ville")}
-            className={`press pb-2.5 text-sm font-semibold transition-colors ${
-              tab === "ville" ? "text-ink" : "text-ink/40 hover:text-ink/60"
-            }`}
-          >
-            Fil Ville
-          </button>
-          <button
-            onClick={() => setTab("pourtoi")}
-            className={`press pb-2.5 text-sm font-semibold transition-colors ${
-              tab === "pourtoi" ? "text-ink" : "text-ink/40 hover:text-ink/60"
-            }`}
-          >
-            Pour toi
-          </button>
-          <span
-            className="absolute bottom-0 h-[2.5px] bg-marigold rounded-full transition-all duration-250 ease-out"
-            style={{
-              width: tab === "ville" ? "58px" : "62px",
-              transform: tab === "ville" ? "translateX(0px)" : "translateX(94px)",
-            }}
-          />
+        {/* Le soulignement est porté par l'onglet lui-même : la version
+            précédente positionnait la barre avec des pixels codés en dur, qui
+            se décalaient dès que la taille de police changeait. */}
+        <div role="tablist" aria-label="Type de fil" className="flex gap-6 border-b border-ink/10">
+          {(
+            [
+              { value: "ville", label: "Fil Ville" },
+              { value: "pourtoi", label: "Pour toi" },
+            ] as const
+          ).map(({ value, label }) => (
+            <button
+              key={value}
+              role="tab"
+              aria-selected={tab === value}
+              onClick={() => setTab(value)}
+              className={`press relative pt-1 pb-3 text-sm font-semibold transition-colors ${
+                tab === value ? "text-ink" : "text-ink/60 hover:text-ink"
+              }`}
+            >
+              {label}
+              <span
+                className={`absolute inset-x-0 -bottom-px h-[2.5px] rounded-full transition-opacity duration-200 ${
+                  tab === value ? "bg-marigold opacity-100" : "opacity-0"
+                }`}
+              />
+            </button>
+          ))}
         </div>
       </header>
 

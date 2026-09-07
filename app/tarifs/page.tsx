@@ -88,7 +88,7 @@ export default function TarifsPage() {
           <div className="rounded-card border border-ink/10 bg-white p-6 flex flex-col">
             <h2 className="text-lg font-bold text-ink mb-1">Gratuit</h2>
             <p className="text-3xl font-extrabold text-ink mb-5">
-              0 € <span className="text-sm font-normal text-ink/45">/mois</span>
+              0 € <span className="text-sm font-normal text-ink/60">/mois</span>
             </p>
             <ul className="space-y-3 text-sm text-ink/70 mb-6 flex-1">
               {FEATURES_FREE.map((f) => (
@@ -101,7 +101,7 @@ export default function TarifsPage() {
               ))}
             </ul>
             {currentPlan === "gratuit" && (
-              <span className="text-center text-xs font-semibold text-ink/45 uppercase tracking-wide py-2.5">
+              <span className="text-center text-xs font-semibold text-ink/60 uppercase tracking-wide py-2.5">
                 Ton plan actuel
               </span>
             )}
@@ -113,7 +113,7 @@ export default function TarifsPage() {
             </span>
             <h2 className="text-lg font-bold text-ink mb-1">Pro</h2>
             <p className="text-3xl font-extrabold text-ink mb-5">
-              14,90 € <span className="text-sm font-normal text-ink/45">/mois</span>
+              14,90 € <span className="text-sm font-normal text-ink/60">/mois</span>
             </p>
             <ul className="space-y-3 text-sm text-ink/70 mb-6 flex-1">
               {FEATURES_PRO.map((f) => (

@@ -19,6 +19,14 @@ export function FavoriteButton({ dealId, userId, initialFavorited, className, on
   const [busy, setBusy] = useState(false);
   const [pop, setPop] = useState(false);
 
+  // Les favoris de l'utilisateur arrivent après le premier rendu des cartes.
+  const [syncedFavorited, setSyncedFavorited] = useState(initialFavorited);
+
+  if (initialFavorited !== syncedFavorited) {
+    setSyncedFavorited(initialFavorited);
+    setFavorited(initialFavorited);
+  }
+
   async function toggle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();

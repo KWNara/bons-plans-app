@@ -22,7 +22,7 @@ export function AuthShell({
 
         <div className="bg-white rounded-card shadow-soft border border-ink/10 p-6 animate-fade-in">
           <h1 className="text-xl font-extrabold text-ink mb-1">{title}</h1>
-          {subtitle && <p className="text-sm text-ink/50 mb-6">{subtitle}</p>}
+          {subtitle && <p className="text-sm text-ink/60 mb-6">{subtitle}</p>}
           {!subtitle && <div className="mb-4" />}
           {children}
         </div>

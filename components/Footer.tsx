@@ -17,7 +17,7 @@ export function Footer() {
 
           <div className="grid grid-cols-2 gap-x-10 gap-y-6 text-sm">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/40 mb-2.5">Découvrir</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2.5">Découvrir</p>
               <ul className="space-y-2">
                 <li>
                   <Link href="/" className="press hover:text-white">
@@ -33,7 +33,7 @@ export function Footer() {
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/40 mb-2.5">Informations légales</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-2.5">Informations légales</p>
               <ul className="space-y-2">
                 <li>
                   <Link href="/mentions-legales" className="press hover:text-white">
@@ -56,7 +56,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/10 mt-8 pt-5">
-          <p className="text-xs text-white/40">© {year} Bons Plans. Tous droits réservés.</p>
+          <p className="text-xs text-white/60">© {year} Bons Plans. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

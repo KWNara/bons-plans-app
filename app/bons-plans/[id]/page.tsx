@@ -214,7 +214,7 @@ export default function BonPlanDetailPage() {
           {(deal.prix_avant || deal.prix_apres) && (
             <p className="mb-3 flex items-baseline gap-2">
               {deal.prix_avant && (
-                <span className="line-through text-ink/35 text-sm">{deal.prix_avant} €</span>
+                <span className="line-through text-ink/60 text-sm">{deal.prix_avant} €</span>
               )}
               {deal.prix_apres && <span className="font-extrabold text-ink text-xl">{deal.prix_apres} €</span>}
             </p>
@@ -267,7 +267,7 @@ export default function BonPlanDetailPage() {
               />
             </span>
             <span className="ml-auto flex items-center gap-3">
-              <ReportButton targetType="deal" targetId={deal.id} userId={userId} iconOnly className="press p-1.5 -m-1.5 rounded-full text-ink/40 hover:text-tag hover:bg-tag/5" />
+              <ReportButton targetType="deal" targetId={deal.id} userId={userId} iconOnly className="press p-1.5 -m-1.5 rounded-full text-ink/60 hover:text-tag hover:bg-tag/5" />
               <FavoriteButton
                 dealId={deal.id}
                 userId={userId}
@@ -277,11 +277,11 @@ export default function BonPlanDetailPage() {
             </span>
           </div>
 
-          <p className="text-xs text-ink/45 mt-2">{formatTimeRemaining(deal.date_fin)}</p>
+          <p className="text-xs text-ink/60 mt-2">{formatTimeRemaining(deal.date_fin)}</p>
 
           {deal.merchant_profiles?.description && (
             <div className="mt-6 rounded-card border border-ink/10 bg-white/60 p-4">
-              <p className="text-xs font-semibold text-ink/50 uppercase tracking-wide mb-1.5">
+              <p className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1.5">
                 À propos de {deal.merchant_profiles.nom_enseigne}
               </p>
               <p className="text-ink/75 text-sm leading-relaxed">{deal.merchant_profiles.description}</p>

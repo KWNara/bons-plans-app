@@ -17,7 +17,7 @@ export function ErrorState({
         <AlertTriangle size={26} className="text-tag" strokeWidth={1.75} />
       </div>
       <p className="font-semibold text-ink mb-1">{title}</p>
-      <p className="text-sm text-ink/50 max-w-xs">{description}</p>
+      <p className="text-sm text-ink/60 max-w-xs">{description}</p>
       {onRetry && (
         <button
           onClick={onRetry}

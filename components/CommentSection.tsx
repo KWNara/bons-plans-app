@@ -113,7 +113,7 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
       {!loading && comments.length === 0 && (
         <div className="flex flex-col items-center text-center py-8">
           <MessageCircle size={22} className="text-ink/20 mb-2" strokeWidth={1.5} />
-          <p className="text-sm text-ink/45">Sois le premier à commenter.</p>
+          <p className="text-sm text-ink/60">Sois le premier à commenter.</p>
         </div>
       )}
 
@@ -130,13 +130,13 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-ink">{c.users?.pseudo}</span>
-                <span className="text-xs text-ink/40">{formatDate(c.created_at)}</span>
+                <span className="text-xs text-ink/60">{formatDate(c.created_at)}</span>
               </div>
               <p className="text-sm text-ink/75 break-words">{c.texte}</p>
               {c.user_id === userId && (
                 <button
                   onClick={() => handleDelete(c.id)}
-                  className="press text-xs text-ink/40 hover:text-tag mt-0.5"
+                  className="press text-xs text-ink/60 hover:text-tag mt-0.5"
                 >
                   Supprimer
                 </button>

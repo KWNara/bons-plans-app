@@ -142,7 +142,7 @@ export default function AdminSignalementsPage() {
           </select>
         </div>
 
-        {sorted.length === 0 && <p className="text-ink/50">Aucun signalement.</p>}
+        {sorted.length === 0 && <p className="text-ink/60">Aucun signalement.</p>}
 
         <ul className="space-y-3">
           {sorted.map((r) => (
@@ -151,7 +151,7 @@ export default function AdminSignalementsPage() {
                 <span className="text-xs font-semibold uppercase text-teal">
                   {r.target_type === "deal" ? "Bon plan" : r.target_type === "merchant" ? "Commerçant" : "Commentaire"}
                 </span>
-                <span className="text-xs text-ink/40">
+                <span className="text-xs text-ink/60">
                   {new Date(r.created_at).toLocaleDateString("fr-FR")}
                 </span>
               </div>
@@ -175,7 +175,7 @@ export default function AdminSignalementsPage() {
 
               <p className="text-sm text-ink/70 mb-1">
                 Motif : <strong>{MOTIF_LABELS[r.motif] ?? r.motif}</strong>
-                {r.reporter?.pseudo && <span className="text-ink/40"> · signalé par {r.reporter.pseudo}</span>}
+                {r.reporter?.pseudo && <span className="text-ink/60"> · signalé par {r.reporter.pseudo}</span>}
               </p>
               {r.reason && <p className="text-sm text-ink/60 mb-2">« {r.reason} »</p>}
 
@@ -187,7 +187,7 @@ export default function AdminSignalementsPage() {
                       ? "text-marigold"
                       : r.status === "traite"
                         ? "text-teal"
-                        : "text-ink/40"
+                        : "text-ink/60"
                   }
                 >
                   {r.status === "en_attente" ? "En attente" : r.status === "traite" ? "Traité" : "Rejeté"}

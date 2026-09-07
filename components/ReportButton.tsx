@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flag } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +29,31 @@ export function ReportButton({ targetType, targetId, userId, className, iconOnly
   const [reason, setReason] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "already">("idle");
   const [error, setError] = useState<string | null>(null);
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    // Une boîte de dialogue doit pouvoir se fermer au clavier et rendre le
+    // focus utilisable : sans ça, un utilisateur au clavier reste piégé
+    // derrière la modale.
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    dialogRef.current?.focus();
+
+    // Empêche la page derrière la modale de défiler sous le doigt.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   function handleOpen() {
     if (!userId) {
@@ -58,7 +83,7 @@ export function ReportButton({ targetType, targetId, userId, className, iconOnly
       if (insertError.code === "23505") {
         setStatus("already");
       } else {
-        setError(insertError.message);
+        setError("Ton signalement n'a pas pu être envoyé. Réessaie dans un instant.");
         setStatus("idle");
       }
       return;
@@ -72,15 +97,29 @@ export function ReportButton({ targetType, targetId, userId, className, iconOnly
       <button
         onClick={handleOpen}
         aria-label="Signaler"
-        className={className ?? "press flex items-center gap-1.5 text-sm text-ink/50 hover:text-tag"}
+        className={className ?? "press flex items-center gap-1.5 text-sm text-ink/60 hover:text-tag"}
       >
         <Flag size={iconOnly ? 17 : 16} />
         {!iconOnly && "Signaler"}
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm px-6 animate-fade-in">
-          <div className="w-full max-w-sm rounded-card bg-paper p-5 shadow-raised">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/40 backdrop-blur-sm p-6 animate-fade-in"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm my-auto max-h-full overflow-y-auto rounded-card bg-paper p-5 shadow-raised outline-none"
+          >
+            <h2 id={titleId} className="sr-only">
+              Signaler ce contenu
+            </h2>
             {status === "sent" ? (
               <>
                 <p className="text-ink mb-4">Merci, ton signalement a été transmis à l&apos;équipe.</p>

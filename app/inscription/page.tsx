@@ -94,7 +94,7 @@ export default function InscriptionPage() {
         />
 
         <label className="block mb-4">
-          <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Mot de passe</span>
+          <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">Mot de passe</span>
           <div className="relative mt-1.5">
             <input
               type={showPassword ? "text" : "password"}
@@ -108,7 +108,7 @@ export default function InscriptionPage() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              className="press absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/40 hover:text-ink"
+              className="press absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-ink/60 hover:text-ink"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -116,7 +116,7 @@ export default function InscriptionPage() {
         </label>
 
         <fieldset className="mb-6">
-          <legend className="text-xs font-semibold text-ink/50 uppercase tracking-wide mb-2">
+          <legend className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-2">
             Je suis un(e)...
           </legend>
           <div className="grid grid-cols-2 gap-2">

@@ -51,7 +51,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 }
 
 function CardLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-2">{children}</p>;
+  return <p className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-2">{children}</p>;
 }
 
 function DealRow({ deal }: { deal: DealSummary }) {
@@ -67,7 +67,7 @@ function DealRow({ deal }: { deal: DealSummary }) {
       )}
       <span className="min-w-0">
         <span className="block text-sm font-medium text-ink truncate">{deal.titre}</span>
-        <span className="block text-xs text-ink/45 truncate">{deal.merchant_profiles?.nom_enseigne}</span>
+        <span className="block text-xs text-ink/60 truncate">{deal.merchant_profiles?.nom_enseigne}</span>
       </span>
     </Link>
   );
@@ -306,7 +306,7 @@ export default function ComptePage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-bold text-ink truncate">{profile?.pseudo}</p>
-              <p className="text-sm text-ink/50 truncate">{profile?.email}</p>
+              <p className="text-sm text-ink/60 truncate">{profile?.email}</p>
               <span
                 className={`inline-flex items-center gap-1 mt-1.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
                   profile?.role === "commercant"
@@ -340,7 +340,7 @@ export default function ComptePage() {
           {editingProfile && (
             <div className="mt-4 pt-4 border-t border-ink/10 animate-fade-in">
               <label className="block mb-3">
-                <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Bio</span>
+                <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">Bio</span>
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
@@ -376,7 +376,7 @@ export default function ComptePage() {
 
           {profile?.role === "commercant" && merchant && (
             <div className="mt-4 pt-4 border-t border-ink/10">
-              <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-1">Enseigne</p>
+              <p className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1">Enseigne</p>
               <p className="font-semibold text-ink mb-2">{merchant.nom_enseigne}</p>
               {merchant.statut_verification === "verifie" ? (
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-teal">
@@ -408,7 +408,7 @@ export default function ComptePage() {
             </Link>
           </div>
           {followedCities.length === 0 ? (
-            <p className="text-sm text-ink/40">Aucune ville suivie pour l&apos;instant.</p>
+            <p className="text-sm text-ink/60">Aucune ville suivie pour l&apos;instant.</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {followedCities.map((f) => (
@@ -446,7 +446,7 @@ export default function ComptePage() {
                       type="button"
                       onClick={() => handleRemoveDiffusionCity(dc.id)}
                       aria-label="Retirer"
-                      className="press w-5 h-5 rounded-full hover:bg-tag/10 text-ink/40 hover:text-tag flex items-center justify-center text-base leading-none"
+                      className="press w-5 h-5 rounded-full hover:bg-tag/10 text-ink/60 hover:text-tag flex items-center justify-center text-base leading-none"
                     >
                       ×
                     </button>
