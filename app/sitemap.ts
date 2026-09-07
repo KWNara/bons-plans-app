@@ -3,6 +3,10 @@ import { supabase } from "@/lib/supabase";
 
 const siteUrl = "https://bons-plans-app.vercel.app";
 
+// Régénère le sitemap au plus toutes les heures plutôt que de le figer
+// au moment du build (sinon les nouveaux bons plans n'y apparaissent jamais).
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/`, changeFrequency: "hourly", priority: 1 },
