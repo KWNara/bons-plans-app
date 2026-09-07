@@ -12,9 +12,14 @@ const bodyFont = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const siteUrl = "https://bons-plans-app.vercel.app";
+const title = "Bons Plans — les offres de ta ville";
+const description = "Retrouve les bons plans des commerçants près de chez toi.";
+
 export const metadata: Metadata = {
-  title: "Bons Plans — les offres de ta ville",
-  description: "Retrouve les bons plans des commerçants près de chez toi.",
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -27,6 +32,21 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Bons Plans",
+  },
+  openGraph: {
+    title,
+    description,
+    url: siteUrl,
+    siteName: "Bons Plans",
+    locale: "fr_FR",
+    type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Bons Plans" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/og-image.png"],
   },
 };
 
