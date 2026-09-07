@@ -142,7 +142,7 @@ export default function DevenirCommercantPage() {
           <ChevronLeft size={20} className="text-ink" />
         </Link>
 
-        <div className="bg-white rounded-card shadow-soft border border-ink/8 p-6">
+        <div className="bg-white rounded-card shadow-soft border border-ink/10 p-6">
           <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center mb-3">
             <Store size={22} className="text-teal" strokeWidth={1.75} />
           </div>

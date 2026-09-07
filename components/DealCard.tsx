@@ -29,9 +29,19 @@ type Props = {
   favorited: boolean;
   reposted: boolean;
   categoryIcone?: string | null;
+  onInteraction?: (kind: "like" | "favorite" | "repost", active: boolean) => void;
 };
 
-export function DealCard({ deal, villeLabel, userId, liked, favorited, reposted, categoryIcone }: Props) {
+export function DealCard({
+  deal,
+  villeLabel,
+  userId,
+  liked,
+  favorited,
+  reposted,
+  categoryIcone,
+  onInteraction,
+}: Props) {
   const badge = discountLabel(deal);
 
   return (
@@ -59,7 +69,8 @@ export function DealCard({ deal, villeLabel, userId, liked, favorited, reposted,
           dealId={deal.id}
           userId={userId}
           initialFavorited={favorited}
-          className="absolute top-3 right-3 bg-white/90 backdrop-blur p-2 rounded-full shadow-soft hover:bg-white"
+          onToggled={(active) => onInteraction?.("favorite", active)}
+          className="absolute top-3 right-3 bg-white/90 backdrop-blur p-2.5 rounded-full shadow-soft hover:bg-white"
         />
       </div>
 
@@ -81,10 +92,17 @@ export function DealCard({ deal, villeLabel, userId, liked, favorited, reposted,
         </div>
       </Link>
 
-      <div className="px-4 pb-4 flex items-center gap-3 text-ink/60">
-        <LikeButton dealId={deal.id} userId={userId} initialLiked={liked} initialCount={deal.likes_count} />
+      <div className="px-4 pb-4 flex items-center gap-3 text-ink/70">
+        <LikeButton
+          dealId={deal.id}
+          userId={userId}
+          initialLiked={liked}
+          initialCount={deal.likes_count}
+          onToggled={(active) => onInteraction?.("like", active)}
+        />
         <Link
           href={`/bons-plans/${deal.id}`}
+          aria-label={`Voir les ${deal.comments_count} commentaires`}
           className="press flex items-center gap-1.5 text-sm -m-1.5 p-1.5 rounded-full hover:bg-ink/5"
         >
           <MessageCircle size={18} />
@@ -95,6 +113,7 @@ export function DealCard({ deal, villeLabel, userId, liked, favorited, reposted,
           userId={userId}
           initialReposted={reposted}
           initialCount={deal.reposts_count}
+          onToggled={(active) => onInteraction?.("repost", active)}
         />
       </div>
     </article>

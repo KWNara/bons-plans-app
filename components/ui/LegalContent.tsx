@@ -38,12 +38,12 @@ export function LegalShell({
           <h1 className="text-xl font-extrabold text-ink">{title}</h1>
         </div>
 
-        <div className="flex items-start gap-2.5 bg-marigold/12 border border-marigold/30 rounded-control px-4 py-3 mb-5">
+        <div className="flex items-start gap-2.5 bg-marigold/10 border border-marigold/30 rounded-control px-4 py-3 mb-5">
           <AlertTriangle size={16} className="text-marigold shrink-0 mt-0.5" />
           <p className="text-xs text-ink/70 leading-relaxed">{intro}</p>
         </div>
 
-        <div className="bg-white rounded-card shadow-soft border border-ink/8 p-5 sm:p-7">
+        <div className="bg-white rounded-card shadow-soft border border-ink/10 p-5 sm:p-7">
           <div className="legal-content">{children}</div>
         </div>
       </div>

@@ -93,7 +93,7 @@ export default function TarifsPage() {
             <ul className="space-y-3 text-sm text-ink/70 mb-6 flex-1">
               {FEATURES_FREE.map((f) => (
                 <li key={f.label} className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-ink/8 flex items-center justify-center shrink-0">
+                  <span className="w-6 h-6 rounded-full bg-ink/10 flex items-center justify-center shrink-0">
                     <f.icon size={12} className="text-ink/60" />
                   </span>
                   {f.label}
@@ -118,7 +118,7 @@ export default function TarifsPage() {
             <ul className="space-y-3 text-sm text-ink/70 mb-6 flex-1">
               {FEATURES_PRO.map((f) => (
                 <li key={f.label} className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-teal/12 flex items-center justify-center shrink-0">
+                  <span className="w-6 h-6 rounded-full bg-teal/10 flex items-center justify-center shrink-0">
                     <f.icon size={12} className="text-teal" />
                   </span>
                   {f.label.includes("illimités") ? (

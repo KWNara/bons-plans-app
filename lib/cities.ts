@@ -16,6 +16,13 @@ export async function searchCities(query: string, signal?: AbortSignal): Promise
     `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&type=municipality&limit=5`,
     { signal }
   );
+
+  // Sans ce contrôle, une panne de l'API Adresse est indiscernable d'un
+  // « aucune ville trouvée » et l'utilisateur croit avoir mal tapé.
+  if (!res.ok) {
+    throw new Error(`Recherche de villes indisponible (HTTP ${res.status}).`);
+  }
+
   const data = await res.json();
 
   return (data.features ?? []).map((f: any) => ({
@@ -28,6 +35,10 @@ export async function searchCities(query: string, signal?: AbortSignal): Promise
 
 export async function reverseGeocodeCity(lon: number, lat: number): Promise<BanSuggestion | null> {
   const res = await fetch(`https://api-adresse.data.gouv.fr/reverse/?lon=${lon}&lat=${lat}`);
+  if (!res.ok) {
+    throw new Error(`Localisation indisponible (HTTP ${res.status}).`);
+  }
+
   const data = await res.json();
   const props = data.features?.[0]?.properties;
   if (!props) return null;

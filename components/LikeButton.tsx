@@ -10,9 +10,12 @@ type Props = {
   userId: string | null | undefined;
   initialLiked: boolean;
   initialCount: number;
+  // Le fil remonte les cartes au changement d'onglet : sans remonter l'état au
+  // parent, un like tout juste posé réapparaîtrait comme non-liké.
+  onToggled?: (liked: boolean) => void;
 };
 
-export function LikeButton({ dealId, userId, initialLiked, initialCount }: Props) {
+export function LikeButton({ dealId, userId, initialLiked, initialCount, onToggled }: Props) {
   const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
@@ -29,22 +32,40 @@ export function LikeButton({ dealId, userId, initialLiked, initialCount }: Props
     if (busy) return;
     setBusy(true);
 
-    if (liked) {
-      setLiked(false);
-      setCount((c) => c - 1);
-      await supabase.from("likes").delete().eq("user_id", userId).eq("deal_id", dealId);
-    } else {
-      setLiked(true);
-      setCount((c) => c + 1);
+    const wasLiked = liked;
+    const previousCount = count;
+
+    setLiked(!wasLiked);
+    setCount((c) => (wasLiked ? c - 1 : c + 1));
+    onToggled?.(!wasLiked);
+
+    if (!wasLiked) {
       setPop(true);
       setTimeout(() => setPop(false), 320);
-      await supabase.from("likes").insert({ user_id: userId, deal_id: dealId });
     }
+
+    const { error } = wasLiked
+      ? await supabase.from("likes").delete().eq("user_id", userId).eq("deal_id", dealId)
+      : await supabase.from("likes").insert({ user_id: userId, deal_id: dealId });
+
+    // Sans ce retour en arrière, l'interface affirmerait que le like est
+    // enregistré alors qu'il ne l'est pas (hors ligne, RLS, base injoignable).
+    if (error) {
+      setLiked(wasLiked);
+      setCount(previousCount);
+      onToggled?.(wasLiked);
+    }
+
     setBusy(false);
   }
 
   return (
-    <button onClick={toggle} className="press flex items-center gap-1.5 text-sm text-ink/60 -m-1.5 p-1.5 rounded-full hover:bg-tag/5">
+    <button
+      onClick={toggle}
+      aria-pressed={liked}
+      aria-label={liked ? `Retirer mon like (${count})` : `Liker (${count})`}
+      className="press flex items-center gap-1.5 text-sm text-ink/70 -m-1.5 p-1.5 rounded-full hover:bg-tag/5"
+    >
       <Heart
         size={18}
         className={`${liked ? "fill-tag text-tag" : ""} ${pop ? "animate-pop" : ""}`}

@@ -1,6 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/authenticatedUser";
+import { siteOrigin } from "@/lib/siteOrigin";
 
 export async function POST(req: Request) {
   const user = await getAuthenticatedUser(req);
@@ -18,11 +19,9 @@ export async function POST(req: Request) {
     return Response.json({ error: "Aucun abonnement associé à ce compte." }, { status: 400 });
   }
 
-  const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
-
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: merchant.stripe_customer_id,
-    return_url: `${origin}/mon-abonnement`,
+    return_url: `${siteOrigin(req)}/mon-abonnement`,
   });
 
   return Response.json({ url: portalSession.url });

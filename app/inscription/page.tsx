@@ -125,7 +125,7 @@ export default function InscriptionPage() {
               onClick={() => setRole("particulier")}
               className={`press flex flex-col items-center gap-1.5 rounded-control border py-3 text-sm font-semibold transition-colors ${
                 role === "particulier"
-                  ? "border-teal bg-teal/8 text-teal"
+                  ? "border-teal bg-teal/10 text-teal"
                   : "border-ink/15 text-ink/60"
               }`}
             >
@@ -137,7 +137,7 @@ export default function InscriptionPage() {
               onClick={() => setRole("commercant")}
               className={`press flex flex-col items-center gap-1.5 rounded-control border py-3 text-sm font-semibold transition-colors ${
                 role === "commercant"
-                  ? "border-teal bg-teal/8 text-teal"
+                  ? "border-teal bg-teal/10 text-teal"
                   : "border-ink/15 text-ink/60"
               }`}
             >

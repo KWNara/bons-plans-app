@@ -11,34 +11,74 @@ type Props = {
   initialReposted: boolean;
   initialCount: number;
   allowComment?: boolean;
+  onToggled?: (reposted: boolean) => void;
 };
 
-export function RepostButton({ dealId, userId, initialReposted, initialCount, allowComment }: Props) {
+export function RepostButton({
+  dealId,
+  userId,
+  initialReposted,
+  initialCount,
+  allowComment,
+  onToggled,
+}: Props) {
   const router = useRouter();
   const [reposted, setReposted] = useState(initialReposted);
   const [count, setCount] = useState(initialCount);
   const [composing, setComposing] = useState(false);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
 
   async function removeRepost() {
     if (busy) return;
     setBusy(true);
+    setError(false);
+
+    const previousCount = count;
     setReposted(false);
     setCount((c) => c - 1);
-    await supabase.from("reposts").delete().eq("user_id", userId!).eq("deal_id", dealId);
+    onToggled?.(false);
+
+    const { error: deleteError } = await supabase
+      .from("reposts")
+      .delete()
+      .eq("user_id", userId!)
+      .eq("deal_id", dealId);
+
+    if (deleteError) {
+      setReposted(true);
+      setCount(previousCount);
+      onToggled?.(true);
+      setError(true);
+    }
+
     setBusy(false);
   }
 
   async function addRepost(withComment: string | null) {
+    if (busy) return;
     setBusy(true);
+    setError(false);
+
+    const previousCount = count;
     setReposted(true);
     setCount((c) => c + 1);
     setComposing(false);
     setComment("");
-    await supabase
+    onToggled?.(true);
+
+    const { error: insertError } = await supabase
       .from("reposts")
       .insert({ user_id: userId!, deal_id: dealId, commentaire_ajoute: withComment });
+
+    if (insertError) {
+      setReposted(false);
+      setCount(previousCount);
+      onToggled?.(false);
+      setError(true);
+    }
+
     setBusy(false);
   }
 
@@ -64,11 +104,17 @@ export function RepostButton({ dealId, userId, initialReposted, initialCount, al
     <div>
       <button
         onClick={handleClick}
-        className="press flex items-center gap-1.5 text-sm text-ink/60 -m-1.5 p-1.5 rounded-full hover:bg-teal/5"
+        aria-pressed={reposted}
+        aria-label={reposted ? `Annuler mon repartage (${count})` : `Repartager (${count})`}
+        className="press flex items-center gap-1.5 text-sm text-ink/70 -m-1.5 p-1.5 rounded-full hover:bg-teal/5"
       >
         <Repeat2 size={18} className={reposted ? "text-teal" : ""} />
         <span className={reposted ? "text-teal font-medium" : ""}>{count}</span>
       </button>
+
+      {error && (
+        <p className="mt-1.5 text-xs text-tag">Le repartage n&apos;a pas pu être enregistré. Réessaie.</p>
+      )}
 
       {composing && (
         <div className="mt-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>

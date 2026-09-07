@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPin, ChevronDown, Bell, UserRound, BellPlus, MapPinOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +37,23 @@ export default function Home() {
   const categoryIcones = useMemo(
     () => new Map(categories.map((c) => [c.id, c.icone])),
     [categories]
+  );
+
+  // Le changement d'onglet remonte les cartes : sans mémoriser ici les
+  // interactions, un like posé à l'instant réapparaîtrait comme non-liké.
+  const rememberInteraction = useCallback(
+    (kind: "like" | "favorite" | "repost", dealId: string, active: boolean) => {
+      const setter =
+        kind === "like" ? setLikedIds : kind === "favorite" ? setFavoritedIds : setRepostedIds;
+
+      setter((previous) => {
+        const next = new Set(previous);
+        if (active) next.add(dealId);
+        else next.delete(dealId);
+        return next;
+      });
+    },
+    []
   );
 
   useEffect(() => {
@@ -101,6 +118,12 @@ export default function Home() {
     setFeedLoading(true);
     setFeedError(false);
 
+    // Deux filtres enchaînés rapidement partent en parallèle et rien ne
+    // garantit l'ordre des réponses : sans ce drapeau, la plus lente (donc la
+    // plus ancienne) écrase la plus récente et le fil ne correspond plus au
+    // filtre affiché.
+    let stale = false;
+
     let query = supabase
       .from("deals")
       .select(
@@ -117,6 +140,8 @@ export default function Home() {
     else query = query.order("date_fin", { ascending: true, nullsFirst: false });
 
     query.then(async ({ data, error }) => {
+      if (stale) return;
+
       if (error) {
         setFeedError(true);
         setFeedLoading(false);
@@ -134,6 +159,9 @@ export default function Home() {
           supabase.from("favorites").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
           supabase.from("reposts").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
         ]);
+
+        if (stale) return;
+
         setLikedIds(new Set((likes ?? []).map((l) => l.deal_id)));
         setFavoritedIds(new Set((favorites ?? []).map((f) => f.deal_id)));
         setRepostedIds(new Set((reposts ?? []).map((r) => r.deal_id)));
@@ -143,6 +171,10 @@ export default function Home() {
         setRepostedIds(new Set());
       }
     });
+
+    return () => {
+      stale = true;
+    };
   }, [selectedCity, categoryId, sort, userId, reloadTick]);
 
   const displayedDeals = useMemo(() => {
@@ -280,7 +312,7 @@ export default function Home() {
 
       <main
         key={tab}
-        className="animate-fade-in px-4 pb-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto"
+        className="animate-fade-in px-4 pb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto"
       >
         {!selectedCity && (
           <EmptyState
@@ -331,7 +363,7 @@ export default function Home() {
           !feedError &&
           displayedDeals.map((deal) => (
             <DealCard
-              key={`${deal.id}:${likedIds.has(deal.id)}:${favoritedIds.has(deal.id)}:${repostedIds.has(deal.id)}`}
+              key={deal.id}
               deal={deal}
               villeLabel={selectedCity.nom}
               userId={userId}
@@ -339,6 +371,7 @@ export default function Home() {
               favorited={favoritedIds.has(deal.id)}
               reposted={repostedIds.has(deal.id)}
               categoryIcone={deal.category_id ? categoryIcones.get(deal.category_id) : null}
+              onInteraction={(kind, active) => rememberInteraction(kind, deal.id, active)}
             />
           ))}
       </main>

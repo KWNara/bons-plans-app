@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 type Profile = {
   pseudo: string;
@@ -43,7 +44,7 @@ type DealSummary = {
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-card border border-ink/8 bg-white shadow-soft p-4 mb-4 ${className}`}>
+    <div className={`rounded-card border border-ink/10 bg-white shadow-soft p-4 mb-4 ${className}`}>
       {children}
     </div>
   );
@@ -76,6 +77,7 @@ export default function ComptePage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
   const [diffusionCities, setDiffusionCities] = useState<DiffusionCity[]>([]);
@@ -104,13 +106,22 @@ export default function ComptePage() {
 
       setUserId(user.id);
 
-      const { data: userRow } = await supabase
+      // L'email n'est pas lisible via la table `users` (colonne volontairement
+      // non exposée pour ne pas divulguer les emails de tous les comptes) :
+      // celui du compte courant vient de la session d'authentification.
+      const { data: userRow, error: userError } = await supabase
         .from("users")
-        .select("pseudo, email, role, avatar_url, bio")
+        .select("pseudo, role, avatar_url, bio")
         .eq("id", user.id)
         .single();
 
-      setProfile(userRow);
+      if (userError) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+
+      setProfile({ ...userRow, email: user.email ?? "" });
       setBio(userRow?.bio ?? "");
 
       if (userRow?.role === "commercant") {
@@ -244,6 +255,18 @@ export default function ComptePage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
+        <ErrorState
+          title="Impossible de charger ton compte"
+          description="La connexion au serveur a échoué."
+          onRetry={() => window.location.reload()}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
       <div className="max-w-md mx-auto">
@@ -315,7 +338,7 @@ export default function ComptePage() {
           </div>
 
           {editingProfile && (
-            <div className="mt-4 pt-4 border-t border-ink/8 animate-fade-in">
+            <div className="mt-4 pt-4 border-t border-ink/10 animate-fade-in">
               <label className="block mb-3">
                 <span className="text-xs font-semibold text-ink/50 uppercase tracking-wide">Bio</span>
                 <textarea
@@ -352,7 +375,7 @@ export default function ComptePage() {
           )}
 
           {profile?.role === "commercant" && merchant && (
-            <div className="mt-4 pt-4 border-t border-ink/8">
+            <div className="mt-4 pt-4 border-t border-ink/10">
               <p className="text-xs font-semibold text-ink/45 uppercase tracking-wide mb-1">Enseigne</p>
               <p className="font-semibold text-ink mb-2">{merchant.nom_enseigne}</p>
               {merchant.statut_verification === "verifie" ? (
@@ -493,7 +516,7 @@ export default function ComptePage() {
 
         <button
           onClick={handleSignOut}
-          className="press flex items-center justify-center gap-2 w-full rounded-control bg-ink/8 text-ink/70 py-2.5 font-medium"
+          className="press flex items-center justify-center gap-2 w-full rounded-control bg-ink/10 text-ink/70 py-2.5 font-medium"
         >
           <LogOut size={15} />
           Se déconnecter

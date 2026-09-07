@@ -126,7 +126,7 @@ export default function CommercantVitrinePage() {
       <Link
         key={deal.id}
         href={`/bons-plans/${deal.id}`}
-        className={`press flex items-center gap-3 rounded-card border border-ink/8 bg-white p-3 shadow-soft hover:shadow-raised transition-shadow ${muted ? "opacity-60" : ""}`}
+        className={`press flex items-center gap-3 rounded-card border border-ink/10 bg-white p-3 shadow-soft hover:shadow-raised transition-shadow ${muted ? "opacity-60" : ""}`}
       >
         {deal.photos[0] ? (
           <img src={deal.photos[0]} alt={deal.titre} className="w-16 h-16 rounded-control object-cover shrink-0" />
