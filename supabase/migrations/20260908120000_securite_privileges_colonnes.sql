@@ -15,6 +15,12 @@
 revoke update on users from authenticated;
 grant update (pseudo, avatar_url, bio, city_id) on users to authenticated;
 
+-- Le rôle anonyme n'a aucune raison d'écrire dans ces tables. La politique RLS
+-- le bloquait déjà (auth.uid() est nul), mais laisser le privilège en place
+-- rendait la protection dépendante d'une seule politique.
+revoke update on users from anon;
+revoke update on merchant_profiles from anon;
+
 -- users : l'email ne doit jamais être lisible par un tiers. Le propriétaire
 -- récupère le sien via la session d'authentification, pas via cette table.
 revoke select on users from anon, authenticated;
