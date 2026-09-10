@@ -4,6 +4,7 @@ import "./globals.css";
 import { CityProvider } from "@/lib/cityContext";
 import { Footer } from "@/components/Footer";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { PasswordRecoveryRedirect } from "@/components/PasswordRecoveryRedirect";
 
 const bodyFont = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -67,6 +68,7 @@ export default function RootLayout({
         <CityProvider>{children}</CityProvider>
         <Footer />
         <ServiceWorkerRegister />
+        <PasswordRecoveryRedirect />
       </body>
     </html>
   );
