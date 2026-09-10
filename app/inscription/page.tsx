@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { AuthShell } from "@/components/ui/AuthShell";
 import { FormInput } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
+import { authErrorMessage } from "@/lib/authErrors";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function InscriptionPage() {
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(authErrorMessage(signUpError));
       return;
     }
 

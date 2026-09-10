@@ -9,6 +9,7 @@ import { AuthShell } from "@/components/ui/AuthShell";
 import { FormInput } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
 import { GoogleIcon } from "@/components/ui/BrandIcons";
+import { authErrorMessage } from "@/lib/authErrors";
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function ConnexionPage() {
     setLoading(false);
 
     if (signInError) {
-      setError(signInError.message);
+      setError(authErrorMessage(signInError));
       return;
     }
 
@@ -73,6 +74,12 @@ export default function ConnexionPage() {
             </button>
           </div>
         </label>
+
+        <p className="-mt-2 mb-4 text-right">
+          <Link href="/mot-de-passe-oublie" className="press text-sm text-teal font-medium">
+            Mot de passe oublié ?
+          </Link>
+        </p>
 
         {error && <p className="text-tag mb-4 text-sm">{error}</p>}
 

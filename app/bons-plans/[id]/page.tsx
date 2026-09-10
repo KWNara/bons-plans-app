@@ -60,6 +60,9 @@ export default function BonPlanDetailPage() {
   const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
   const [reposted, setReposted] = useState(false);
+  // Tenu à jour par la section commentaires, sinon le compteur de l'en-tête
+  // reste figé sur la valeur chargée à l'ouverture de la page.
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     load();
@@ -82,6 +85,7 @@ export default function BonPlanDetailPage() {
     }
 
     setDeal(data as unknown as Detail);
+    setCommentCount((data as unknown as Detail).comments_count);
     setState("ready");
   }
 
@@ -245,17 +249,15 @@ export default function BonPlanDetailPage() {
             )}
           </div>
 
-          <div
-            key={`${liked}:${favorited}:${reposted}`}
-            className="flex items-center gap-1 text-ink/60 py-3 border-y border-ink/10"
-          >
+          <div className="flex items-center gap-1 text-ink/70 py-3 border-y border-ink/10">
             <LikeButton dealId={deal.id} userId={userId} initialLiked={liked} initialCount={deal.likes_count} />
             <a
               href="#commentaires"
+              aria-label={`Voir les ${commentCount} commentaires`}
               className="press flex items-center gap-1.5 text-sm -m-1.5 p-1.5 ml-2 rounded-full hover:bg-ink/5"
             >
               <MessageCircle size={18} />
-              {deal.comments_count}
+              {commentCount}
             </a>
             <span className="ml-2">
               <RepostButton
@@ -289,7 +291,7 @@ export default function BonPlanDetailPage() {
           )}
 
           <div id="commentaires">
-            <CommentSection dealId={deal.id} userId={userId} />
+            <CommentSection dealId={deal.id} userId={userId} onCountChange={setCommentCount} />
           </div>
         </div>
       </div>

@@ -18,12 +18,21 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-export function CommentSection({ dealId, userId }: { dealId: string; userId: string | null | undefined }) {
+export function CommentSection({
+  dealId,
+  userId,
+  onCountChange,
+}: {
+  dealId: string;
+  userId: string | null | undefined;
+  onCountChange?: (count: number) => void;
+}) {
   const router = useRouter();
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -31,13 +40,24 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
   }, [dealId]);
 
   async function load() {
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("comments")
       .select("id, texte, created_at, user_id, users:user_id (pseudo, avatar_url)")
       .eq("deal_id", dealId)
       .order("created_at", { ascending: false });
-    setComments((data as unknown as Comment[]) ?? []);
+
     setLoading(false);
+
+    // Sans ce contrôle, une base injoignable affichait « Sois le premier à
+    // commenter » sur un bon plan qui a des dizaines de commentaires.
+    if (loadError) {
+      setError("Les commentaires n'ont pas pu être chargés.");
+      return;
+    }
+
+    const list = (data as unknown as Comment[]) ?? [];
+    setComments(list);
+    onCountChange?.(list.length);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -48,21 +68,36 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
     }
     if (!text.trim()) return;
 
+    setError(null);
     setPosting(true);
-    const { error } = await supabase
+    const { error: insertError } = await supabase
       .from("comments")
       .insert({ user_id: userId, deal_id: dealId, texte: text.trim() });
     setPosting(false);
 
-    if (!error) {
-      setText("");
-      load();
+    if (insertError) {
+      setError("Ton commentaire n'a pas pu être publié. Réessaie.");
+      return;
     }
+
+    setText("");
+    load();
   }
 
   async function handleDelete(id: string) {
-    setComments((prev) => prev.filter((c) => c.id !== id));
-    await supabase.from("comments").delete().eq("id", id);
+    const previous = comments;
+    const next = comments.filter((c) => c.id !== id);
+
+    setComments(next);
+    onCountChange?.(next.length);
+
+    const { error: deleteError } = await supabase.from("comments").delete().eq("id", id);
+
+    if (deleteError) {
+      setComments(previous);
+      onCountChange?.(previous.length);
+      setError("La suppression a échoué.");
+    }
   }
 
   return (
@@ -95,6 +130,8 @@ export function CommentSection({ dealId, userId }: { dealId: string; userId: str
           pour commenter.
         </p>
       )}
+
+      {error && <p className="text-tag text-sm mb-3">{error}</p>}
 
       {loading && (
         <div className="space-y-3">
