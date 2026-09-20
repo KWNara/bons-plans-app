@@ -101,6 +101,7 @@ export default function ComptePage() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [profileOk, setProfileOk] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -215,7 +216,11 @@ export default function ComptePage() {
       const path = `${userId}/${Date.now()}-${avatarFile.name}`;
       const { error: uploadError } = await supabase.storage.from("avatars").upload(path, avatarFile);
       if (uploadError) {
-        setProfileMessage(`Échec de l'upload : ${uploadError.message}`);
+        // Le message brut de Supabase est en anglais et technique : on garde
+        // le détail dans la console pour le diagnostic, pas à l'écran.
+        console.error(uploadError);
+        setProfileOk(false);
+        setProfileMessage("L'envoi de la photo a échoué. Réessaie dans un instant.");
         setSavingProfile(false);
         return;
       }
@@ -230,7 +235,9 @@ export default function ComptePage() {
     setSavingProfile(false);
 
     if (error) {
-      setProfileMessage(error.message);
+      console.error(error);
+      setProfileOk(false);
+      setProfileMessage("Les modifications n'ont pas pu être enregistrées.");
       return;
     }
 
@@ -238,6 +245,7 @@ export default function ComptePage() {
     setAvatarFile(null);
     setAvatarPreview(null);
     setEditingProfile(false);
+    setProfileOk(true);
     setProfileMessage("Profil mis à jour.");
   }
 
@@ -305,11 +313,15 @@ export default function ComptePage() {
                 </div>
               )}
               {editingProfile && (
-                <label className="press absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-contrast text-white flex items-center justify-center cursor-pointer shadow-soft">
+                // Le pseudo-élément élargit la zone tactile de 24 à 40 px sans
+                // toucher à la mise en page. Pas de `relative` à ajouter : un
+                // élément déjà positionné en absolu sert de bloc conteneur.
+                <label className="press absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-contrast text-white flex items-center justify-center cursor-pointer shadow-soft after:absolute after:-inset-2 after:content-['']">
                   <Camera size={12} />
                   <input
                     type="file"
                     accept="image/*"
+                    aria-label="Changer la photo de profil"
                     className="hidden"
                     onChange={(e) => handleAvatarChange(e.target.files?.[0] ?? null)}
                   />
@@ -362,7 +374,9 @@ export default function ComptePage() {
                 />
               </label>
 
-              {profileMessage && <p className="text-sm text-teal mb-2">{profileMessage}</p>}
+              {profileMessage && !profileOk && (
+                <p className="text-sm text-tag mb-2">{profileMessage}</p>
+              )}
 
               <div className="flex gap-2">
                 <button
@@ -370,6 +384,7 @@ export default function ComptePage() {
                     setEditingProfile(false);
                     setAvatarFile(null);
                     setAvatarPreview(null);
+                    setProfileMessage(null);
                   }}
                   className="press flex-1 rounded-control border border-ink/15 text-ink py-2 text-sm font-medium"
                 >
@@ -384,6 +399,14 @@ export default function ComptePage() {
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Hors du bloc d'édition : l'enregistrement ferme l'éditeur et pose
+              le message dans le même lot de mises à jour, si bien que le rendu
+              se faisait déjà avec editingProfile à false et que « Profil mis à
+              jour » n'apparaissait jamais. */}
+          {profileMessage && profileOk && (
+            <p className="text-sm text-teal mt-3">{profileMessage}</p>
           )}
 
           {profile?.role === "commercant" && merchant && (
@@ -457,8 +480,10 @@ export default function ComptePage() {
                     <button
                       type="button"
                       onClick={() => handleRemoveDiffusionCity(dc.id)}
-                      aria-label="Retirer"
-                      className="press w-5 h-5 rounded-full hover:bg-tag/10 text-ink/60 hover:text-tag flex items-center justify-center text-base leading-none"
+                      aria-label={`Retirer ${dc.cities?.nom ?? "cette ville"}`}
+                      // 20 px visibles, 40 px cliquables : la zone est étendue
+                      // par un pseudo-élément, sans grossir la puce.
+                      className="press relative w-5 h-5 rounded-full hover:bg-tag/10 text-ink/60 hover:text-tag flex items-center justify-center text-base leading-none after:absolute after:-inset-2.5 after:content-['']"
                     >
                       ×
                     </button>

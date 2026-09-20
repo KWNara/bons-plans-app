@@ -105,10 +105,13 @@ body {
   .legal-content td {
     @apply text-ink/70 px-3 py-2 border-b border-ink/10 align-top;
   }
+  /* `bg-white` et l'ombre en dur ne suivaient pas le thème : en mode sombre,
+     la première colonne restait blanc pur sous un texte devenu clair, donc
+     illisible. Les jetons, eux, basculent tout seuls. */
   .legal-content th:first-child,
   .legal-content td:first-child {
-    @apply sticky left-0 bg-white whitespace-nowrap;
-    box-shadow: 1px 0 0 rgba(32, 38, 59, 0.1);
+    @apply sticky left-0 bg-surface whitespace-nowrap;
+    box-shadow: 1px 0 0 rgb(var(--c-ink) / 0.1);
   }
   .legal-content th:first-child {
     @apply bg-paper;

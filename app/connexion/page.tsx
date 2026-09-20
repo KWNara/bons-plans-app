@@ -18,6 +18,7 @@ export default function ConnexionPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,10 +38,21 @@ export default function ConnexionPage() {
   }
 
   async function handleGoogle() {
-    await supabase.auth.signInWithOAuth({
+    setError(null);
+    setGoogleLoading(true);
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/compte` },
     });
+
+    // Le résultat était ignoré : si le fournisseur n'est pas activé ou si le
+    // réseau tombe, le bouton ne produisait strictement aucun retour visible.
+    // En cas de succès on garde le voyant : la redirection prend le relais.
+    if (oauthError) {
+      setError(authErrorMessage(oauthError));
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -101,9 +113,10 @@ export default function ConnexionPage() {
         <button
           type="button"
           onClick={handleGoogle}
-          className="press w-full flex items-center justify-center gap-2.5 rounded-control border border-ink/15 py-2.5 font-medium text-sm text-ink hover:bg-paper"
+          disabled={googleLoading}
+          className="press w-full flex items-center justify-center gap-2.5 rounded-control border border-ink/15 py-2.5 font-medium text-sm text-ink hover:bg-paper disabled:opacity-50"
         >
-          <GoogleIcon size={16} />
+          {googleLoading ? <Spinner size={16} /> : <GoogleIcon size={16} />}
           Continuer avec Google
         </button>
 

@@ -252,7 +252,10 @@ export function DealForm({ merchantId, existingDeal }: Props) {
         .from("deal-photos")
         .upload(path, file);
       if (uploadError) {
-        setError(`Échec de l'upload d'une photo : ${uploadError.message}`);
+        // Le reste du fichier traduit systématiquement les messages serveur ;
+        // celui-ci laissait passer de l'anglais technique jusqu'à l'écran.
+        console.error(uploadError);
+        setError("Une photo n'a pas pu être envoyée. Vérifie son format et sa taille, puis réessaie.");
         setLoading(null);
         return;
       }
@@ -432,37 +435,55 @@ export function DealForm({ merchantId, existingDeal }: Props) {
           </button>
         </div>
 
+        {/* Deux champs numériques côte à côte, quasi identiques : dès que le
+            commerçant saisit un chiffre, le marque-place disparaît et plus rien
+            ne dit lequel des deux est actif. L'étiquette reste donc visible. */}
         {priceMode === "prix" ? (
           <div className="flex gap-2">
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Prix avant"
-              value={prixAvant}
-              onChange={(e) => setPrixAvant(e.target.value)}
-              className="w-1/2 rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
-            />
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Prix après"
-              value={prixApres}
-              onChange={(e) => setPrixApres(e.target.value)}
-              className="w-1/2 rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
-            />
+            <label className="w-1/2 block">
+              <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">
+                Prix avant
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="20,00"
+                value={prixAvant}
+                onChange={(e) => setPrixAvant(e.target.value)}
+                className="mt-1.5 w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
+              />
+            </label>
+            <label className="w-1/2 block">
+              <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">
+                Prix après
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="14,00"
+                value={prixApres}
+                onChange={(e) => setPrixApres(e.target.value)}
+                className="mt-1.5 w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
+              />
+            </label>
           </div>
         ) : (
-          <input
-            type="number"
-            min="1"
-            max="99"
-            placeholder="% de réduction"
-            value={reductionPourcentage}
-            onChange={(e) => setReductionPourcentage(e.target.value)}
-            className="w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
-          />
+          <label className="block">
+            <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">
+              Pourcentage de réduction
+            </span>
+            <input
+              type="number"
+              min="1"
+              max="99"
+              placeholder="30"
+              value={reductionPourcentage}
+              onChange={(e) => setReductionPourcentage(e.target.value)}
+              className="mt-1.5 w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
+            />
+          </label>
         )}
       </fieldset>
 

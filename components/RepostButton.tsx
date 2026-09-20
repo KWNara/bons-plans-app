@@ -135,6 +135,9 @@ export function RepostButton({
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
+            // Le marque-place s'efface à la saisie et ne laisse plus rien pour
+            // identifier le champ — d'autant qu'il apparaît après un clic.
+            aria-label="Ajouter un commentaire à ton repartage"
             placeholder="Ajouter un commentaire (optionnel)"
             rows={2}
             className="w-full rounded-control border border-ink/15 px-3 py-2 text-sm focus:border-teal"

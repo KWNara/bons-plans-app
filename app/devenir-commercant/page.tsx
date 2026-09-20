@@ -86,7 +86,8 @@ export default function DevenirCommercantPage() {
       const { error: uploadError } = await supabase.storage.from("logos").upload(path, logoFile);
 
       if (uploadError) {
-        setError(`Échec de l'upload du logo : ${uploadError.message}`);
+        console.error(uploadError);
+        setError("Le logo n'a pas pu être envoyé. Vérifie son format et sa taille, puis réessaie.");
         setLoading(false);
         return;
       }
