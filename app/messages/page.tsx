@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { Avatar } from "@/components/ui/Avatar";
 
 type Message = {
   id: string;
@@ -170,18 +171,7 @@ export default function MessagesPage() {
                   href={`/messages/${interlocuteur.id}`}
                   className="press flex items-center gap-3 bg-surface rounded-card shadow-soft border border-ink/10 p-3"
                 >
-                  {interlocuteur.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={interlocuteur.avatar_url}
-                      alt=""
-                      className="w-11 h-11 rounded-full object-cover shrink-0"
-                    />
-                  ) : (
-                    <span className="w-11 h-11 rounded-full bg-teal/10 text-teal font-semibold flex items-center justify-center shrink-0">
-                      {interlocuteur.pseudo[0]?.toUpperCase() ?? "?"}
-                    </span>
-                  )}
+                  <Avatar pseudo={interlocuteur.pseudo} url={interlocuteur.avatar_url} size={44} />
 
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm font-semibold text-ink truncate">

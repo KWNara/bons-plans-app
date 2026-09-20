@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { ChevronLeft, Store, Sparkles, Archive } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -129,7 +130,14 @@ export default function CommercantVitrinePage() {
         className={`press flex items-center gap-3 rounded-card border border-ink/10 bg-surface p-3 shadow-soft hover:shadow-raised transition-shadow ${muted ? "opacity-60" : ""}`}
       >
         {deal.photos[0] ? (
-          <img src={deal.photos[0]} alt={deal.titre} className="w-16 h-16 rounded-control object-cover shrink-0" />
+          <Image
+            src={deal.photos[0]}
+            alt={deal.titre}
+            width={64}
+            height={64}
+            sizes="64px"
+            className="w-16 h-16 rounded-control object-cover shrink-0"
+          />
         ) : (
           <div className="w-16 h-16 rounded-control bg-ink/5 shrink-0" />
         )}
@@ -156,9 +164,13 @@ export default function CommercantVitrinePage() {
 
         <div className="flex items-end gap-4 -mt-10 mb-3">
           {merchant.logo_url ? (
-            <img
+            <Image
               src={merchant.logo_url}
               alt={merchant.nom_enseigne}
+              width={80}
+              height={80}
+              sizes="80px"
+              priority
               className="w-20 h-20 rounded-full object-cover border-4 border-paper shadow-soft"
             />
           ) : (

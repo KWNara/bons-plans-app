@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { MapPin, ChevronLeft, ImageOff, PackageX, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +18,7 @@ import { ReportButton } from "@/components/ReportButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { Avatar } from "@/components/ui/Avatar";
 
 type Detail = {
   id: string;
@@ -167,13 +169,22 @@ export default function BonPlanDetailPage() {
           <BackButton />
           {deal.photos.length > 0 ? (
             <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar">
-              {deal.photos.map((url) => (
-                <img
+              {deal.photos.map((url, i) => (
+                <div
                   key={url}
-                  src={url}
-                  alt={deal.titre}
-                  className="w-full shrink-0 snap-center h-72 sm:h-96 object-cover"
-                />
+                  className="relative w-full shrink-0 snap-center h-72 sm:h-96"
+                >
+                  <Image
+                    src={url}
+                    alt={deal.titre}
+                    fill
+                    // La première photo est le plus gros élément visible à
+                    // l'ouverture : la charger en priorité évite un écran gris.
+                    priority={i === 0}
+                    sizes="(max-width: 672px) 100vw, 672px"
+                    className="object-cover"
+                  />
+                </div>
               ))}
             </div>
           ) : (
@@ -199,17 +210,11 @@ export default function BonPlanDetailPage() {
               href={`/commercant/${deal.merchant_profiles.id}`}
               className="press inline-flex items-center gap-2 -ml-1 pl-1 pr-2 py-1 rounded-control hover:bg-surface"
             >
-              {deal.merchant_profiles.logo_url ? (
-                <img
-                  src={deal.merchant_profiles.logo_url}
-                  alt=""
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-              ) : (
-                <span className="w-6 h-6 rounded-full bg-teal/15 flex items-center justify-center text-[10px] font-bold text-teal">
-                  {deal.merchant_profiles.nom_enseigne[0]?.toUpperCase()}
-                </span>
-              )}
+              <Avatar
+                pseudo={deal.merchant_profiles.nom_enseigne}
+                url={deal.merchant_profiles.logo_url}
+                size={24}
+              />
               <span className="text-xs font-semibold text-teal uppercase tracking-wide">
                 {deal.merchant_profiles.nom_enseigne}
               </span>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Send, UserX } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { Avatar } from "@/components/ui/Avatar";
 import { discountLabel } from "@/lib/dealFormat";
 
 type Message = {
@@ -218,18 +220,7 @@ export default function ConversationPage() {
           >
             <ChevronLeft size={20} className="text-ink" />
           </Link>
-          {interlocuteur?.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={interlocuteur.avatar_url}
-              alt=""
-              className="w-9 h-9 rounded-full object-cover shrink-0"
-            />
-          ) : (
-            <span className="w-9 h-9 rounded-full bg-teal/10 text-teal font-semibold flex items-center justify-center shrink-0">
-              {interlocuteur?.pseudo?.[0]?.toUpperCase() ?? "?"}
-            </span>
-          )}
+          <Avatar pseudo={interlocuteur?.pseudo} url={interlocuteur?.avatar_url} size={36} />
           <h1 className="text-lg font-extrabold text-ink truncate">
             {interlocuteur?.pseudo ?? "Conversation"}
           </h1>
@@ -259,8 +250,15 @@ export default function ConversationPage() {
                       className="press block rounded-control overflow-hidden bg-paper mb-2"
                     >
                       {m.deals.photos[0] && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.deals.photos[0]} alt="" className="w-full h-24 object-cover" />
+                        <span className="relative block w-full h-24">
+                          <Image
+                            src={m.deals.photos[0]}
+                            alt=""
+                            fill
+                            sizes="280px"
+                            className="object-cover"
+                          />
+                        </span>
                       )}
                       <span className="block px-2.5 py-2">
                         <span className="block text-sm font-semibold text-ink leading-snug">

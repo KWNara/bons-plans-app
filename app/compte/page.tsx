@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin, ShieldCheck, Clock, Store, Repeat2, Bookmark, LogOut, Camera, Users, MessagesSquare } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -62,7 +63,14 @@ function DealRow({ deal }: { deal: DealSummary }) {
       className="press flex items-center gap-3 -mx-1.5 px-1.5 py-1.5 rounded-control hover:bg-paper"
     >
       {deal.photos[0] ? (
-        <img src={deal.photos[0]} alt="" className="w-11 h-11 rounded-control object-cover shrink-0" />
+        <Image
+          src={deal.photos[0]}
+          alt=""
+          width={44}
+          height={44}
+          sizes="44px"
+          className="w-11 h-11 rounded-control object-cover shrink-0"
+        />
       ) : (
         <div className="w-11 h-11 rounded-control bg-ink/5 shrink-0" />
       )}
@@ -283,6 +291,9 @@ export default function ComptePage() {
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               {avatarPreview || profile?.avatar_url ? (
+                // Reste une balise <img> : l'aperçu est une URL blob: locale,
+                // que l'optimiseur de next/image ne sait pas récupérer.
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={avatarPreview ?? profile!.avatar_url!}
                   alt=""

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MessageCircle, ImageOff } from "lucide-react";
 import { discountLabel, formatTimeRemaining } from "@/lib/dealFormat";
 import { LikeButton } from "@/components/LikeButton";
@@ -49,11 +50,18 @@ export function DealCard({
       <div className="relative">
         <Link href={`/bons-plans/${deal.id}`} className="block">
           {deal.photos[0] ? (
-            <img
-              src={deal.photos[0]}
-              alt={deal.titre}
-              className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            />
+            <div className="relative w-full h-40 overflow-hidden">
+              <Image
+                src={deal.photos[0]}
+                alt={deal.titre}
+                fill
+                // Les commerçants téléversent des photos plein format : sans
+                // ces tailles, un mobile téléchargerait plusieurs mégaoctets
+                // pour une vignette de 160 pixels de haut.
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              />
+            </div>
           ) : (
             <div className="w-full h-40 bg-ink/5 flex items-center justify-center">
               <ImageOff size={22} className="text-ink/20" strokeWidth={1.5} />

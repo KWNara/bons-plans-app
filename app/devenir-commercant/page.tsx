@@ -156,6 +156,8 @@ export default function DevenirCommercantPage() {
             <div className="flex items-center gap-3 mb-3.5">
               <div className="relative shrink-0">
                 {logoPreview ? (
+                  // URL blob: locale : next/image ne peut pas l'optimiser.
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={logoPreview} alt="" className="w-14 h-14 rounded-full object-cover" />
                 ) : (
                   <div className="w-14 h-14 rounded-full bg-paper border border-dashed border-ink/20 flex items-center justify-center">

@@ -7,6 +7,7 @@ import { Send, Check, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { chargerRelations, type Ami } from "@/lib/amis";
 import { Spinner } from "@/components/ui/Spinner";
+import { Avatar } from "@/components/ui/Avatar";
 
 type Props = {
   dealId: string;
@@ -140,18 +141,7 @@ export function EnvoyerAUnAmi({ dealId, userId }: Props) {
                   const dejaEnvoye = envoyes.includes(ami.id);
                   return (
                     <li key={ami.id} className="flex items-center gap-3">
-                      {ami.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={ami.avatar_url}
-                          alt=""
-                          className="w-10 h-10 rounded-full object-cover shrink-0"
-                        />
-                      ) : (
-                        <span className="w-10 h-10 rounded-full bg-teal/10 text-teal font-semibold flex items-center justify-center shrink-0">
-                          {ami.pseudo[0]?.toUpperCase() ?? "?"}
-                        </span>
-                      )}
+                      <Avatar pseudo={ami.pseudo} url={ami.avatar_url} />
                       <span className="flex-1 min-w-0 text-sm font-medium text-ink truncate">
                         {ami.pseudo}
                       </span>

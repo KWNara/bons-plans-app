@@ -371,6 +371,9 @@ export function DealForm({ merchantId, existingDeal }: Props) {
             const isExisting = i < existingPhotos.length;
             return (
               <div key={url + i} className="relative w-16 h-16 rounded-control overflow-hidden group">
+                {/* Les photos pas encore téléversées sont des URL blob: que
+                    l'optimiseur de next/image ne sait pas récupérer. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={url} alt="" className="w-full h-full object-cover" />
                 <button
                   type="button"

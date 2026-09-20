@@ -17,19 +17,9 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { Avatar } from "@/components/ui/Avatar";
 
 type Trouve = { id: string; pseudo: string; avatar_url: string | null };
-
-function Avatar({ pseudo, url }: { pseudo: string; url: string | null }) {
-  return url ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
-  ) : (
-    <span className="w-10 h-10 rounded-full bg-teal/10 text-teal font-semibold flex items-center justify-center shrink-0">
-      {pseudo[0]?.toUpperCase() ?? "?"}
-    </span>
-  );
-}
 
 export default function AmisPage() {
   const router = useRouter();

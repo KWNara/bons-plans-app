@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Send, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Avatar } from "@/components/ui/Avatar";
 
 type Comment = {
   id: string;
@@ -157,13 +158,7 @@ export function CommentSection({
       <ul className="space-y-4">
         {comments.map((c) => (
           <li key={c.id} className="flex gap-2.5 animate-fade-in">
-            <div className="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center text-xs font-bold text-teal overflow-hidden shrink-0">
-              {c.users?.avatar_url ? (
-                <img src={c.users.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                c.users?.pseudo?.[0]?.toUpperCase() ?? "?"
-              )}
-            </div>
+            <Avatar pseudo={c.users?.pseudo} url={c.users?.avatar_url} size={32} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-ink">{c.users?.pseudo}</span>
