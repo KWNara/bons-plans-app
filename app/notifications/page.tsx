@@ -13,6 +13,7 @@ import {
   UserCheck,
   MessagesSquare,
   PartyPopper,
+  AtSign,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -40,6 +41,7 @@ const ICONS: Record<string, React.ElementType> = {
   ami_accepte: UserCheck,
   message: MessagesSquare,
   ami_participe: PartyPopper,
+  mention: AtSign,
 };
 
 function messageFor(n: Notification): string {
@@ -51,6 +53,7 @@ function messageFor(n: Notification): string {
   if (n.type === "ami_accepte") return `${qui} a accepté ta demande d'ami.`;
   if (n.type === "message") return `${qui} t'a écrit : « ${n.message} »`;
   if (n.type === "ami_participe") return `${qui} y va aussi !`;
+  if (n.type === "mention") return `${qui} t'a cité : « ${n.message} »`;
 
   return n.message ?? "";
 }

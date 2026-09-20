@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
 import { BulleSilencieuse } from "@/components/ui/Illustrations";
+import { TexteAvecMentions } from "@/components/TexteAvecMentions";
+import { appliquerMention, extraireMentions, fragmentEnCours } from "@/lib/mentions";
 
 type Comment = {
   id: string;
@@ -37,6 +39,9 @@ export function CommentSection({
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [echecChargement, setEchecChargement] = useState(false);
+  const [profilsMentionnes, setProfilsMentionnes] = useState<Map<string, string>>(new Map());
+  const [suggestions, setSuggestions] = useState<{ id: string; pseudo: string; avatar_url: string | null }[]>([]);
+  const champRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     load();
@@ -67,6 +72,69 @@ export function CommentSection({
     const list = (data as unknown as Comment[]) ?? [];
     setComments(list);
     onCountChange?.(list.length);
+    await resoudreMentions(list);
+  }
+
+  // Les « @pseudo » sont résolus en une seule requête pour toute la liste :
+  // une par commentaire aurait multiplié les allers-retours sur un fil animé.
+  async function resoudreMentions(list: Comment[]) {
+    const pseudos = [...new Set(list.flatMap((c) => extraireMentions(c.texte)))];
+    if (pseudos.length === 0) return;
+
+    // Correspondance exacte : `ilike` demanderait un `or()` construit à partir
+    // des pseudos, or une virgule ou une parenthèse dans l'un d'eux casserait
+    // le filtre PostgREST. L'autocomplétion insérant le pseudo tel qu'il est
+    // enregistré, la casse concorde dans le cas courant ; sinon la mention
+    // s'affiche en texte brut, ce qui reste correct.
+    const { data } = await supabase
+      .from("users")
+      .select("id, pseudo")
+      .in("pseudo", pseudos);
+
+    setProfilsMentionnes((precedent) => {
+      const suivant = new Map(precedent);
+      for (const u of data ?? []) suivant.set(u.pseudo.toLowerCase(), u.id);
+      return suivant;
+    });
+  }
+
+  // L'autocomplétion ne se déclenche qu'à partir d'une lettre saisie : sur un
+  // simple « @ », elle aurait proposé les dix premiers pseudos de la base, sans
+  // rapport avec qui que ce soit.
+  async function surSaisie(valeur: string, position: number) {
+    setText(valeur);
+
+    const fragment = fragmentEnCours(valeur, position);
+
+    if (fragment === null || fragment.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+
+    const { data } = await supabase
+      .from("users")
+      .select("id, pseudo, avatar_url")
+      .ilike("pseudo", `${fragment}%`)
+      .limit(5);
+
+    setSuggestions(data ?? []);
+  }
+
+  function choisirMention(pseudo: string) {
+    const champ = champRef.current;
+    if (!champ) return;
+
+    const { texte, curseur } = appliquerMention(text, champ.selectionStart ?? text.length, pseudo);
+
+    setText(texte);
+    setSuggestions([]);
+
+    // Le curseur est replacé après le rendu, sinon React le renvoie en fin de
+    // champ et la suite de la phrase s'écrit au mauvais endroit.
+    requestAnimationFrame(() => {
+      champ.focus();
+      champ.setSelectionRange(curseur, curseur);
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -114,25 +182,46 @@ export function CommentSection({
       <p className="text-sm font-semibold text-ink mb-3">Commentaires ({comments.length})</p>
 
       {userId ? (
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-5">
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            // Le seul intitulé était le marque-place, qui disparaît dès la
-            // première frappe : plus rien ne rappelait le rôle du champ.
-            aria-label="Ajouter un commentaire"
-            placeholder="Ajouter un commentaire..."
-            className="flex-1 rounded-control border border-ink/15 px-3.5 py-2.5 text-sm focus:border-teal"
-          />
-          <button
-            type="submit"
-            disabled={posting || !text.trim()}
-            aria-label="Publier"
-            className="press rounded-control bg-teal text-white w-11 flex items-center justify-center disabled:opacity-40"
-          >
-            <Send size={16} />
-          </button>
+        <form onSubmit={handleSubmit} className="relative mb-5">
+          <div className="flex gap-2">
+            <input
+              ref={champRef}
+              type="text"
+              value={text}
+              onChange={(e) => surSaisie(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+              // Le seul intitulé était le marque-place, qui disparaît dès la
+              // première frappe : plus rien ne rappelait le rôle du champ.
+              aria-label="Ajouter un commentaire"
+              placeholder="Ajouter un commentaire, @pseudo pour citer…"
+              autoComplete="off"
+              className="flex-1 rounded-control border border-ink/15 px-3.5 py-2.5 text-sm focus:border-teal"
+            />
+            <button
+              type="submit"
+              disabled={posting || !text.trim()}
+              aria-label="Publier"
+              className="press rounded-control bg-teal text-white w-11 flex items-center justify-center disabled:opacity-40"
+            >
+              <Send size={16} />
+            </button>
+          </div>
+
+          {suggestions.length > 0 && (
+            <ul className="absolute z-10 left-0 right-12 mt-1 rounded-control border border-ink/10 bg-surface shadow-raised overflow-hidden">
+              {suggestions.map((u) => (
+                <li key={u.id}>
+                  <button
+                    type="button"
+                    onClick={() => choisirMention(u.pseudo)}
+                    className="press flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-paper"
+                  >
+                    <Avatar pseudo={u.pseudo} url={u.avatar_url} size={24} />
+                    <span className="text-sm font-medium text-ink truncate">{u.pseudo}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </form>
       ) : (
         <p className="text-sm mb-5 rounded-control bg-surface border border-ink/10 px-3.5 py-2.5">
@@ -197,7 +286,11 @@ export function CommentSection({
                 </Link>
                 <span className="text-xs text-ink/60">{formatDate(c.created_at)}</span>
               </div>
-              <p className="text-sm text-ink/75 break-words">{c.texte}</p>
+              <TexteAvecMentions
+                texte={c.texte}
+                profils={profilsMentionnes}
+                className="text-sm text-ink/75 break-words"
+              />
               {c.user_id === userId && (
                 <button
                   onClick={() => handleDelete(c.id)}
