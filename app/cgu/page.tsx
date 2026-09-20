@@ -2,7 +2,7 @@ import { FileText } from "lucide-react";
 import { LegalShell, Fill } from "@/components/ui/LegalContent";
 
 export const metadata = {
-  title: "CGU & CGV — Bons Plans",
+  title: "CGU & CGV — Déniche",
 };
 
 export default function CguPage() {
@@ -15,7 +15,7 @@ export default function CguPage() {
       <h3>Article 1 — Objet</h3>
       <p>
         Les présentes CGU/CGV ont pour objet de définir les modalités d&apos;accès et d&apos;utilisation de la
-        plateforme <Fill>[NOM DE L&apos;APPLICATION]</Fill>, mettant en relation des commerçants locaux et des
+        plateforme Déniche, mettant en relation des commerçants locaux et des
         utilisateurs autour de bons plans et offres commerciales.
       </p>
 
@@ -24,7 +24,7 @@ export default function CguPage() {
         <li>L&apos;inscription est gratuite pour les utilisateurs (particuliers).</li>
         <li>L&apos;inscription commerçant nécessite un numéro SIRET valide, vérifié automatiquement lors de l&apos;inscription.</li>
         <li>
-          <Fill>[NOM DE L&apos;APPLICATION]</Fill> se réserve le droit de refuser ou suspendre tout compte ne
+          Déniche se réserve le droit de refuser ou suspendre tout compte ne
           respectant pas les présentes conditions.
         </li>
       </ul>
@@ -34,7 +34,7 @@ export default function CguPage() {
         <li>Le commerçant est seul responsable de l&apos;exactitude des informations publiées (prix, disponibilité, durée de validité de l&apos;offre).</li>
         <li>Les annonces trompeuses, frauduleuses, ou ne correspondant pas à une offre réelle sont interdites et peuvent entraîner la suspension du compte.</li>
         <li>
-          <Fill>[NOM DE L&apos;APPLICATION]</Fill> exerce une modération a posteriori : les contenus signalés
+          Déniche exerce une modération a posteriori : les contenus signalés
           sont examinés et peuvent être retirés sans préavis.
         </li>
       </ul>
@@ -50,7 +50,7 @@ export default function CguPage() {
         <li>Formule gratuite : jusqu&apos;à 3 bons plans actifs simultanément.</li>
         <li>Formule payante « Pro » : 14,90 € TTC/mois, sans engagement, résiliable à tout moment, bons plans illimités.</li>
         <li>
-          Le paiement est géré par Stripe. <Fill>[NOM DE L&apos;APPLICATION]</Fill> ne stocke aucune donnée
+          Le paiement est géré par Stripe. Déniche ne stocke aucune donnée
           bancaire.
         </li>
         <li>L&apos;abonnement se renouvelle automatiquement chaque mois sauf résiliation avant la date de renouvellement.</li>
@@ -64,7 +64,7 @@ export default function CguPage() {
 
       <h3>Article 6 — Responsabilité</h3>
       <p>
-        <Fill>[NOM DE L&apos;APPLICATION]</Fill> agit en tant qu&apos;intermédiaire technique et n&apos;est pas
+        Déniche agit en tant qu&apos;intermédiaire technique et n&apos;est pas
         partie aux transactions éventuelles entre commerçants et utilisateurs. La plateforme ne garantit pas la
         disponibilité effective des offres publiées par les commerçants.
       </p>
@@ -77,7 +77,7 @@ export default function CguPage() {
 
       <h3>Article 8 — Modification des CGU/CGV</h3>
       <p>
-        <Fill>[NOM DE L&apos;APPLICATION]</Fill> se réserve le droit de modifier les présentes conditions. Les
+        Déniche se réserve le droit de modifier les présentes conditions. Les
         utilisateurs seront informés par email en cas de modification substantielle.
       </p>
     </LegalShell>

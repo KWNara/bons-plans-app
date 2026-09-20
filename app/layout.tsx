@@ -14,7 +14,7 @@ const bodyFont = Plus_Jakarta_Sans({
 });
 
 const siteUrl = "https://bons-plans-app.vercel.app";
-const title = "Bons Plans — les offres de ta ville";
+const title = "Déniche — les offres de ta ville";
 const description = "Retrouve les bons plans des commerçants près de chez toi.";
 
 export const metadata: Metadata = {
@@ -32,16 +32,16 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Bons Plans",
+    title: "Déniche",
   },
   openGraph: {
     title,
     description,
     url: siteUrl,
-    siteName: "Bons Plans",
+    siteName: "Déniche",
     locale: "fr_FR",
     type: "website",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Bons Plans" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Déniche" }],
   },
   twitter: {
     card: "summary_large_image",

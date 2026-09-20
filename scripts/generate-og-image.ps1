@@ -24,7 +24,7 @@ $bigBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArg
 $g.FillEllipse($bigBrush, $bigX, $bigY, $bigR, $bigR)
 $bigBrush.Dispose()
 
-# badge circle with "B" monogram, left side
+# badge circle portant le mark de Déniche (le panier et sa trouvaille)
 $badgeSize = 220
 $badgeX = 110
 $badgeY = [int](($height - $badgeSize) / 2)
@@ -32,24 +32,34 @@ $badgeBrush = New-Object System.Drawing.SolidBrush($white)
 $g.FillEllipse($badgeBrush, $badgeX, $badgeY, $badgeSize, $badgeSize)
 $badgeBrush.Dispose()
 
-$letterFont = New-Object System.Drawing.Font("Segoe UI", 130, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-$letterBrush = New-Object System.Drawing.SolidBrush($teal)
+# Mark dessiné dans le repère 56x56 du SVG source, remis à l'échelle du badge.
+$u = ($badgeSize / 56.0) * 0.78
+$ox = $badgeX + ($badgeSize - (56.0 * $u)) / 2.0
+$oy = $badgeY + ($badgeSize - (56.0 * $u)) / 2.0
+function Pt { param($v, $axis) if ($axis -eq "x") { return $ox + ($v * $u) } else { return $oy + ($v * $u) } }
+
+$markPen = New-Object System.Drawing.Pen($teal, [float](3.2 * $u))
+$markPen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+$markPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
+
+$x0 = Pt 12 "x"; $y0 = Pt 28 "y"
+$cx = Pt 28 "x"; $cy = Pt 48 "y"
+$x1 = Pt 44 "x"; $y1 = Pt 28 "y"
+$c1x = $x0 + (2.0 / 3.0) * ($cx - $x0); $c1y = $y0 + (2.0 / 3.0) * ($cy - $y0)
+$c2x = $x1 + (2.0 / 3.0) * ($cx - $x1); $c2y = $y1 + (2.0 / 3.0) * ($cy - $y1)
+$g.DrawBezier($markPen, [float]$x0, [float]$y0, [float]$c1x, [float]$c1y, [float]$c2x, [float]$c2y, [float]$x1, [float]$y1)
+
+$g.DrawEllipse($markPen, [float](Pt 11 "x"), [float](Pt 22.5 "y"), [float](34 * $u), [float](11 * $u))
+$markPen.Dispose()
+
+$dotR = 5.5 * $u
+$dotBrush = New-Object System.Drawing.SolidBrush($marigold)
+$g.FillEllipse($dotBrush, [float]((Pt 28 "x") - $dotR), [float]((Pt 25 "y") - $dotR), [float]($dotR * 2), [float]($dotR * 2))
+$dotBrush.Dispose()
+
 $format = New-Object System.Drawing.StringFormat
 $format.Alignment = [System.Drawing.StringAlignment]::Center
 $format.LineAlignment = [System.Drawing.StringAlignment]::Center
-$badgeRectY = $badgeY - 6
-$badgeRect = New-Object System.Drawing.RectangleF($badgeX, $badgeRectY, $badgeSize, $badgeSize)
-$g.DrawString("B", $letterFont, $letterBrush, $badgeRect, $format)
-$letterFont.Dispose()
-$letterBrush.Dispose()
-
-# marigold accent dot on the badge
-$dotR = 34
-$dotX = $badgeX + $badgeSize - 26
-$dotY = $badgeY + 14
-$dotBrush = New-Object System.Drawing.SolidBrush($marigold)
-$g.FillEllipse($dotBrush, $dotX, $dotY, $dotR, $dotR)
-$dotBrush.Dispose()
 
 # wordmark + tagline, right of badge
 $textX = $badgeX + $badgeSize + 60
@@ -63,7 +73,8 @@ $titleFormat = New-Object System.Drawing.StringFormat
 $titleFormat.Alignment = [System.Drawing.StringAlignment]::Near
 $titleFormat.LineAlignment = [System.Drawing.StringAlignment]::Center
 $titleRect = New-Object System.Drawing.RectangleF($textX, $titleY, $textW, 110)
-$g.DrawString("Bons Plans", $titleFont, $titleBrush, $titleRect, $titleFormat)
+$marque = "D" + [char]0x00E9 + "niche"
+$g.DrawString($marque, $titleFont, $titleBrush, $titleRect, $titleFormat)
 $titleFont.Dispose()
 $titleBrush.Dispose()
 

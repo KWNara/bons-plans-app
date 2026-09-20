@@ -1,6 +1,6 @@
 {
-  "name": "Bons Plans",
-  "short_name": "Bons Plans",
+  "name": "Déniche",
+  "short_name": "Déniche",
   "description": "Les bons plans des commerçants de ta ville, en temps réel.",
   "id": "/",
   "start_url": "/",

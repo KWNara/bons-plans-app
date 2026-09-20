@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { QuotaDepasseBanner } from "@/components/QuotaDepasseBanner";
 
 type Deal = {
   id: string;
@@ -35,6 +36,7 @@ export default function MesBonsPlansPage() {
   const router = useRouter();
   const [state, setState] = useState<"loading" | "error" | "ready">("loading");
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [plan, setPlan] = useState<"gratuit" | "payant">("gratuit");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -50,7 +52,7 @@ export default function MesBonsPlansPage() {
 
     const { data: merchant, error: merchantError } = await supabase
       .from("merchant_profiles")
-      .select("id")
+      .select("id, plan")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -77,6 +79,7 @@ export default function MesBonsPlansPage() {
       return;
     }
 
+    setPlan(merchant.plan as "gratuit" | "payant");
     setDeals(data ?? []);
     setState("ready");
   }, [router]);
@@ -167,6 +170,10 @@ export default function MesBonsPlansPage() {
               </Link>
             }
           />
+        )}
+
+        {state === "ready" && plan === "gratuit" && (
+          <QuotaDepasseBanner actifs={groups[0].items.length} />
         )}
 
         {actionError && <p className="text-tag text-sm mb-3">{actionError}</p>}

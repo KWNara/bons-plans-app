@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Tag } from "lucide-react";
+import { LogoLockup } from "@/components/ui/Logo";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -9,10 +9,7 @@ export function Footer() {
       <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-8">
           <Link href="/" className="press flex items-center gap-2 w-fit">
-            <span className="w-8 h-8 rounded-full bg-teal flex items-center justify-center shrink-0">
-              <Tag size={15} className="text-white" strokeWidth={2.25} />
-            </span>
-            <span className="font-extrabold text-white text-base tracking-tight">Bons Plans</span>
+            <LogoLockup size={32} textClassName="text-white text-base" />
           </Link>
 
           <div className="grid grid-cols-2 gap-x-10 gap-y-6 text-sm">
@@ -56,7 +53,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/10 mt-8 pt-5">
-          <p className="text-xs text-white/60">© {year} Bons Plans. Tous droits réservés.</p>
+          <p className="text-xs text-white/60">© {year} Déniche. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

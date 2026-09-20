@@ -3,7 +3,7 @@ import { Compass } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export const metadata = {
-  title: "Page introuvable — Bons Plans",
+  title: "Page introuvable — Déniche",
 };
 
 export default function NotFound() {
