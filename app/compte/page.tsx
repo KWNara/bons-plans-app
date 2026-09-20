@@ -11,6 +11,9 @@ import { resolveCity, type BanSuggestion } from "@/lib/cities";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CarteParrainage } from "@/components/CarteParrainage";
+import { AdresseSearchInput } from "@/components/AdresseSearchInput";
+import { ActiverNotifications } from "@/components/ActiverNotifications";
 
 type Profile = {
   pseudo: string;
@@ -24,6 +27,7 @@ type MerchantProfile = {
   id: string;
   nom_enseigne: string;
   statut_verification: "verifie" | "en_attente_verification";
+  adresse: string | null;
 };
 
 type DiffusionCity = {
@@ -102,6 +106,8 @@ export default function ComptePage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [profileOk, setProfileOk] = useState(false);
+  const [adresseMessage, setAdresseMessage] = useState<string | null>(null);
+  const [adresseOk, setAdresseOk] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -137,7 +143,7 @@ export default function ComptePage() {
       if (userRow?.role === "commercant") {
         const { data: merchantRow } = await supabase
           .from("merchant_profiles")
-          .select("id, nom_enseigne, statut_verification")
+          .select("id, nom_enseigne, statut_verification, adresse")
           .eq("user_id", user.id)
           .single();
 
@@ -247,6 +253,35 @@ export default function ComptePage() {
     setEditingProfile(false);
     setProfileOk(true);
     setProfileMessage("Profil mis à jour.");
+  }
+
+  // L'adresse est enregistrée dès qu'elle est choisie : c'est une action à un
+  // clic, lui adjoindre un bouton « Enregistrer » ferait un pas de plus pour
+  // rien, avec le risque d'oublier de valider.
+  async function enregistrerAdresse(
+    adresse: string | null,
+    latitude: number | null,
+    longitude: number | null
+  ) {
+    if (!merchant) return;
+
+    setAdresseMessage(null);
+
+    const { error } = await supabase
+      .from("merchant_profiles")
+      .update({ adresse, latitude, longitude })
+      .eq("id", merchant.id);
+
+    if (error) {
+      console.error(error);
+      setAdresseOk(false);
+      setAdresseMessage("L'adresse n'a pas pu être enregistrée.");
+      return;
+    }
+
+    setMerchant({ ...merchant, adresse });
+    setAdresseOk(true);
+    setAdresseMessage(adresse ? "Adresse enregistrée." : "Adresse retirée.");
   }
 
   async function handleSignOut() {
@@ -422,6 +457,19 @@ export default function ComptePage() {
                   <Clock size={15} /> En attente de vérification manuelle
                 </span>
               )}
+
+              <div className="mt-4">
+                <AdresseSearchInput
+                  valeur={merchant.adresse ?? ""}
+                  onChoisir={(a) => enregistrerAdresse(a.libelle, a.latitude, a.longitude)}
+                  onEffacer={() => enregistrerAdresse(null, null, null)}
+                />
+                {adresseMessage && (
+                  <p className={`text-sm -mt-2 ${adresseOk ? "text-teal" : "text-tag"}`}>
+                    {adresseMessage}
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -570,6 +618,10 @@ export default function ComptePage() {
             </Link>
           </div>
         </Card>
+
+        {userId && <ActiverNotifications userId={userId} />}
+
+        {userId && <CarteParrainage userId={userId} />}
 
         <Card>
           <CardLabel>Apparence</CardLabel>
