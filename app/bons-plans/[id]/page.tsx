@@ -14,6 +14,7 @@ import { RepostButton } from "@/components/RepostButton";
 import { CommentSection } from "@/components/CommentSection";
 import { ShareButton } from "@/components/ShareButton";
 import { EnvoyerAUnAmi } from "@/components/EnvoyerAUnAmi";
+import { QuiYVa } from "@/components/QuiYVa";
 import { ReportButton } from "@/components/ReportButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -293,6 +294,8 @@ export default function BonPlanDetailPage() {
           </div>
 
           <p className="text-xs text-ink/60 mt-2">{formatTimeRemaining(deal.date_fin)}</p>
+
+          <QuiYVa dealId={deal.id} userId={userId} />
 
           {deal.merchant_profiles?.description && (
             <div className="mt-6 rounded-card border border-ink/10 bg-surface/60 p-4">
