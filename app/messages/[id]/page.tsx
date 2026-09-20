@@ -231,10 +231,12 @@ export default function ConversationPage() {
           >
             <ChevronLeft size={20} className="text-ink" />
           </Link>
-          <Avatar pseudo={interlocuteur?.pseudo} url={interlocuteur?.avatar_url} size={36} />
-          <h1 className="text-lg font-extrabold text-ink truncate">
-            {interlocuteur?.pseudo ?? "Conversation"}
-          </h1>
+          <Link href={`/profil/${autre}`} className="press flex min-w-0 items-center gap-2">
+            <Avatar pseudo={interlocuteur?.pseudo} url={interlocuteur?.avatar_url} size={36} />
+            <h1 className="text-lg font-extrabold text-ink truncate">
+              {interlocuteur?.pseudo ?? "Conversation"}
+            </h1>
+          </Link>
         </div>
 
         <div className="flex-1 space-y-2.5 mb-4">

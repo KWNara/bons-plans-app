@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Send, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -158,10 +159,17 @@ export function CommentSection({
       <ul className="space-y-4">
         {comments.map((c) => (
           <li key={c.id} className="flex gap-2.5 animate-fade-in">
-            <Avatar pseudo={c.users?.pseudo} url={c.users?.avatar_url} size={32} />
+            <Link href={`/profil/${c.user_id}`} className="press shrink-0">
+              <Avatar pseudo={c.users?.pseudo} url={c.users?.avatar_url} size={32} />
+            </Link>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-ink">{c.users?.pseudo}</span>
+                <Link
+                  href={`/profil/${c.user_id}`}
+                  className="press text-sm font-semibold text-ink hover:underline"
+                >
+                  {c.users?.pseudo}
+                </Link>
                 <span className="text-xs text-ink/60">{formatDate(c.created_at)}</span>
               </div>
               <p className="text-sm text-ink/75 break-words">{c.texte}</p>

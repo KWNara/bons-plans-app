@@ -28,7 +28,10 @@ export default function TarifsPage() {
   const [currentPlan, setCurrentPlan] = useState<Plan>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    // Page publique : `getSession` évite l'aller-retour réseau que `getUser`
+    // impose à un visiteur non connecté.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const user = session?.user;
       if (!user) return;
       const { data } = await supabase
         .from("merchant_profiles")

@@ -159,10 +159,15 @@ export default function AmisPage() {
             <ul className="mt-3 space-y-2">
               {resultats.map((u) => (
                 <li key={u.id} className="flex items-center gap-3">
-                  <Avatar pseudo={u.pseudo} url={u.avatar_url} />
-                  <span className="flex-1 min-w-0 text-sm font-medium text-ink truncate">
-                    {u.pseudo}
-                  </span>
+                  <Link
+                    href={`/profil/${u.id}`}
+                    className="press flex flex-1 min-w-0 items-center gap-3"
+                  >
+                    <Avatar pseudo={u.pseudo} url={u.avatar_url} />
+                    <span className="min-w-0 text-sm font-medium text-ink truncate">
+                      {u.pseudo}
+                    </span>
+                  </Link>
                   {dejaEnRelation.has(u.id) ? (
                     <span className="text-xs text-ink/60 shrink-0">Déjà en relation</span>
                   ) : (
@@ -220,10 +225,15 @@ export default function AmisPage() {
                       key={a.relationId}
                       className="flex items-center gap-3 bg-surface rounded-card shadow-soft border border-ink/10 p-3"
                     >
-                      <Avatar pseudo={a.pseudo} url={a.avatar_url} />
-                      <span className="flex-1 min-w-0 text-sm font-semibold text-ink truncate">
-                        {a.pseudo}
-                      </span>
+                      <Link
+                        href={`/profil/${a.id}`}
+                        className="press flex flex-1 min-w-0 items-center gap-3"
+                      >
+                        <Avatar pseudo={a.pseudo} url={a.avatar_url} />
+                        <span className="min-w-0 text-sm font-semibold text-ink truncate">
+                          {a.pseudo}
+                        </span>
+                      </Link>
                       <button
                         onClick={() =>
                           agir(
@@ -276,10 +286,15 @@ export default function AmisPage() {
                       key={a.relationId}
                       className="flex items-center gap-3 bg-surface rounded-card shadow-soft border border-ink/10 p-3"
                     >
-                      <Avatar pseudo={a.pseudo} url={a.avatar_url} />
-                      <span className="flex-1 min-w-0 text-sm font-semibold text-ink truncate">
-                        {a.pseudo}
-                      </span>
+                      <Link
+                        href={`/profil/${a.id}`}
+                        className="press flex flex-1 min-w-0 items-center gap-3"
+                      >
+                        <Avatar pseudo={a.pseudo} url={a.avatar_url} />
+                        <span className="min-w-0 text-sm font-semibold text-ink truncate">
+                          {a.pseudo}
+                        </span>
+                      </Link>
                       <Link
                         href={`/messages/${a.id}`}
                         aria-label={`Écrire à ${a.pseudo}`}
@@ -319,10 +334,15 @@ export default function AmisPage() {
                       key={a.relationId}
                       className="flex items-center gap-3 bg-surface rounded-card shadow-soft border border-ink/10 p-3"
                     >
-                      <Avatar pseudo={a.pseudo} url={a.avatar_url} />
-                      <span className="flex-1 min-w-0 text-sm text-ink/70 truncate">
-                        {a.pseudo} · en attente
-                      </span>
+                      <Link
+                        href={`/profil/${a.id}`}
+                        className="press flex flex-1 min-w-0 items-center gap-3"
+                      >
+                        <Avatar pseudo={a.pseudo} url={a.avatar_url} />
+                        <span className="min-w-0 text-sm text-ink/70 truncate">
+                          {a.pseudo} · en attente
+                        </span>
+                      </Link>
                       <button
                         onClick={() =>
                           agir(

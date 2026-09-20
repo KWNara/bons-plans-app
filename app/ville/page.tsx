@@ -25,7 +25,10 @@ export default function VillePage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Page publique : `getSession` évite l'aller-retour réseau que `getUser`
+    // impose à un visiteur non connecté.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
       setUserId(user?.id ?? null);
       if (user) loadFollowed(user.id);
     });

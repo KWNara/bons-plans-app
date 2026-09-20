@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, PartyPopper } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -107,8 +108,15 @@ export function QuiYVa({ dealId, userId }: Props) {
       {amis.length > 0 && (
         <ul className="flex items-center mt-3 ml-12">
           {amis.slice(0, 6).map((a) => (
-            <li key={a.id} className="-ml-2 first:ml-0" title={a.pseudo}>
-              <Avatar pseudo={a.pseudo} url={a.avatar_url} size={30} className="ring-2 ring-surface" />
+            <li key={a.id} className="-ml-2 first:ml-0">
+              <Link href={`/profil/${a.id}`} className="press block" title={a.pseudo}>
+                <Avatar
+                  pseudo={a.pseudo}
+                  url={a.avatar_url}
+                  size={30}
+                  className="ring-2 ring-surface"
+                />
+              </Link>
             </li>
           ))}
           {amis.length > 6 && (

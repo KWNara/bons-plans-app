@@ -85,6 +85,39 @@ export async function retirerAmi(relationId: string) {
   return supabase.from("friendships").delete().eq("id", relationId);
 }
 
+export type Relation =
+  | { statut: "moi" }
+  | { statut: "aucune" }
+  | { statut: "recue"; relationId: string }
+  | { statut: "envoyee"; relationId: string }
+  | { statut: "amis"; relationId: string };
+
+// Une seule ligne décrit la relation dans les deux sens : c'est le demandeur
+// qui dit si la demande en attente est la nôtre ou la sienne.
+export async function relationAvec(moi: string, cible: string): Promise<Relation> {
+  if (moi === cible) return { statut: "moi" };
+
+  const paire = pairOrdonnee(moi, cible);
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("id, demandeur, statut")
+    .eq("user_a", paire.user_a)
+    .eq("user_b", paire.user_b)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return { statut: "aucune" };
+
+  if (data.statut === "acceptee") return { statut: "amis", relationId: data.id };
+  if (data.statut === "en_attente") {
+    return data.demandeur === moi
+      ? { statut: "envoyee", relationId: data.id }
+      : { statut: "recue", relationId: data.id };
+  }
+
+  return { statut: "aucune" };
+}
+
 export async function rechercherUtilisateurs(terme: string, moi: string) {
   const { data, error } = await supabase
     .from("users")
