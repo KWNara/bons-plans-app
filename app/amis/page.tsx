@@ -45,6 +45,15 @@ export default function AmisPage() {
     } catch {
       setState("error");
     }
+
+    // Arriver ici, c'est avoir vu les demandes : la pastille de la cloche n'a
+    // plus lieu d'être, qu'on réponde tout de suite ou non.
+    await supabase
+      .from("alerts")
+      .update({ is_read: true })
+      .eq("user_id", uid)
+      .in("type", ["demande_ami", "ami_accepte"])
+      .eq("is_read", false);
   }, []);
 
   useEffect(() => {

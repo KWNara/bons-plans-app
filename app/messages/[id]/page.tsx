@@ -82,13 +82,24 @@ export default function ConversationPage() {
       // plutôt que de laisser l'utilisateur écrire un message qui sera rejeté.
       setState(amitie ? "ready" : "non-ami");
 
-      // Les messages reçus sont marqués comme lus à l'ouverture du fil.
-      await supabase
-        .from("messages")
-        .update({ lu: true })
-        .eq("destinataire", uid)
-        .eq("expediteur", autre)
-        .eq("lu", false);
+      // Les messages reçus sont marqués comme lus à l'ouverture du fil, et la
+      // notification correspondante avec : sans ça, la pastille de la cloche
+      // restait allumée alors qu'on venait de lire la conversation.
+      await Promise.all([
+        supabase
+          .from("messages")
+          .update({ lu: true })
+          .eq("destinataire", uid)
+          .eq("expediteur", autre)
+          .eq("lu", false),
+        supabase
+          .from("alerts")
+          .update({ is_read: true })
+          .eq("user_id", uid)
+          .eq("actor_id", autre)
+          .eq("type", "message")
+          .eq("is_read", false),
+      ]);
     },
     [autre]
   );

@@ -3,7 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Store, Bell, ChevronLeft, BellOff } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Store,
+  Bell,
+  ChevronLeft,
+  BellOff,
+  UserPlus,
+  UserCheck,
+  MessagesSquare,
+  PartyPopper,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -14,6 +25,7 @@ type Notification = {
   type: string;
   message: string | null;
   deal_id: string | null;
+  actor_id: string | null;
   is_read: boolean;
   created_at: string;
   actor: { pseudo: string } | null;
@@ -24,13 +36,32 @@ const ICONS: Record<string, React.ElementType> = {
   commentaire: MessageCircle,
   nouveau_deal_commercant_suivi: Store,
   alerte_declenchee: Bell,
+  demande_ami: UserPlus,
+  ami_accepte: UserCheck,
+  message: MessagesSquare,
+  ami_participe: PartyPopper,
 };
 
 function messageFor(n: Notification): string {
-  if (n.type === "like") return `${n.actor?.pseudo ?? "Quelqu'un"} a aimé ton bon plan.`;
-  if (n.type === "commentaire")
-    return `${n.actor?.pseudo ?? "Quelqu'un"} a commenté : « ${n.message} »`;
+  const qui = n.actor?.pseudo ?? "Quelqu'un";
+
+  if (n.type === "like") return `${qui} a aimé ton bon plan.`;
+  if (n.type === "commentaire") return `${qui} a commenté : « ${n.message} »`;
+  if (n.type === "demande_ami") return `${qui} veut t'ajouter en ami.`;
+  if (n.type === "ami_accepte") return `${qui} a accepté ta demande d'ami.`;
+  if (n.type === "message") return `${qui} t'a écrit : « ${n.message} »`;
+  if (n.type === "ami_participe") return `${qui} y va aussi !`;
+
   return n.message ?? "";
+}
+
+// Une notification sans destination reste un simple encart : mieux vaut ça
+// qu'un lien qui ne mène nulle part.
+function lienDe(n: Notification): string | null {
+  if (n.type === "demande_ami" || n.type === "ami_accepte") return "/amis";
+  if (n.type === "message") return n.actor_id ? `/messages/${n.actor_id}` : "/messages";
+  if (n.deal_id) return `/bons-plans/${n.deal_id}`;
+  return null;
 }
 
 function formatDate(iso: string): string {
@@ -59,7 +90,7 @@ export default function NotificationsPage() {
 
     const { data, error } = await supabase
       .from("alerts")
-      .select("id, type, message, deal_id, is_read, created_at, actor:actor_id (pseudo)")
+      .select("id, type, message, deal_id, actor_id, is_read, created_at, actor:actor_id (pseudo)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -117,7 +148,7 @@ export default function NotificationsPage() {
           <EmptyState
             icon={BellOff}
             title="Aucune notification"
-            description="Les réactions à tes bons plans et tes alertes s'afficheront ici."
+            description="Les demandes d'amis, les messages et les réactions à tes bons plans s'afficheront ici."
           />
         )}
 
@@ -141,10 +172,12 @@ export default function NotificationsPage() {
                 </div>
               );
 
+              const lien = lienDe(n);
+
               return (
                 <li key={n.id}>
-                  {n.deal_id ? (
-                    <Link href={`/bons-plans/${n.deal_id}`} className="press block">
+                  {lien ? (
+                    <Link href={lien} className="press block">
                       {inner}
                     </Link>
                   ) : (
