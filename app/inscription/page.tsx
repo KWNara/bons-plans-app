@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Mail, Eye, EyeOff, User, Store } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Mail, Eye, EyeOff, User, Store, Gift } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { AuthShell } from "@/components/ui/AuthShell";
 import { FormInput } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { authErrorMessage } from "@/lib/authErrors";
 
+// `useSearchParams` interdit le pré-rendu statique de la page entière : sans
+// cette frontière, la compilation échoue sur « missing suspense with CSR
+// bailout ». Le squelette est rendu côté serveur, le formulaire au montage.
 export default function InscriptionPage() {
+  return (
+    <Suspense fallback={<AuthShell title="Créer un compte" subtitle="Rejoins les bons plans de ta ville"><Skeleton className="h-64 w-full rounded-card" /></AuthShell>}>
+      <FormulaireInscription />
+    </Suspense>
+  );
+}
+
+function FormulaireInscription() {
   const router = useRouter();
+  const params = useSearchParams();
+  const [parrain, setParrain] = useState<{ id: string; pseudo: string } | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +34,21 @@ export default function InscriptionPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmationPending, setConfirmationPending] = useState(false);
+
+  // Le lien de parrainage ne transporte qu'un identifiant : on va chercher le
+  // pseudo pour que le filleul voie qui l'invite. Un identifiant inconnu ne
+  // bloque rien, l'inscription se poursuit sans parrain.
+  useEffect(() => {
+    const id = params.get("parrain");
+    if (!id) return;
+
+    supabase
+      .from("users")
+      .select("id, pseudo")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => setParrain(data ?? null));
+  }, [params]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +59,10 @@ export default function InscriptionPage() {
       email,
       password,
       options: {
-        data: { pseudo },
+        // Le parrain passe par les métadonnées d'inscription : c'est le
+        // déclencheur `handle_new_user` qui le valide et l'enregistre, côté
+        // base. Un identifiant forgé n'a donc aucun effet.
+        data: parrain ? { pseudo, parrain: parrain.id } : { pseudo },
         emailRedirectTo: `${window.location.origin}/compte`,
       },
     });
@@ -77,6 +109,16 @@ export default function InscriptionPage() {
 
   return (
     <AuthShell title="Créer un compte" subtitle="Rejoins les bons plans de ta ville">
+      {parrain && (
+        <p className="mb-4 flex items-start gap-2.5 rounded-control border border-marigold/40 bg-marigold/15 px-3.5 py-2.5 text-sm text-ink">
+          <Gift size={16} className="text-marigold shrink-0 mt-0.5" />
+          <span>
+            <strong className="font-semibold">{parrain.pseudo}</strong> t&apos;invite sur Déniche.
+            Tu le retrouveras dans tes demandes d&apos;amis dès ton inscription.
+          </span>
+        </p>
+      )}
+
       <form onSubmit={handleSubmit}>
         <FormInput
           label="Pseudo"
