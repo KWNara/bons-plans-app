@@ -11,6 +11,7 @@ import { LikeButton } from "@/components/LikeButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { RepostButton } from "@/components/RepostButton";
 import { CommentSection } from "@/components/CommentSection";
+import { ShareButton } from "@/components/ShareButton";
 import { ReportButton } from "@/components/ReportButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -267,6 +268,9 @@ export default function BonPlanDetailPage() {
                 initialCount={deal.reposts_count}
                 allowComment
               />
+            </span>
+            <span className="ml-2">
+              <ShareButton titre={deal.titre} enseigne={deal.merchant_profiles?.nom_enseigne} />
             </span>
             <span className="ml-auto flex items-center gap-3">
               <ReportButton targetType="deal" targetId={deal.id} userId={userId} iconOnly className="press p-1.5 -m-1.5 rounded-full text-ink/60 hover:text-tag hover:bg-tag/5" />

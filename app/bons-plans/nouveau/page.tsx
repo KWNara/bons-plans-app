@@ -134,7 +134,7 @@ export default function NouveauBonPlanPage() {
         <EmptyState
           icon={Crown}
           title="Limite du plan gratuit atteinte"
-          description="Passe à l'offre payante pour publier plus d'annonces."
+          description="Passe en Pro pour publier plus de bons plans."
           action={
             <Link
               href="/tarifs"

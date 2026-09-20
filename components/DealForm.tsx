@@ -146,7 +146,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       const { data } = await query;
       setDuplicateWarning(
         data && data.length > 0
-          ? "Une annonce avec ce même titre existe déjà dans une de ces villes pour ton compte. Tu peux quand même publier si ce n'est pas un doublon."
+          ? "Un bon plan avec ce même titre existe déjà dans une de ces villes pour ton compte. Tu peux quand même publier si ce n'est pas un doublon."
           : null
       );
     }, 500);
