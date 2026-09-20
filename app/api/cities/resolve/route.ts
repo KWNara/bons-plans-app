@@ -5,12 +5,25 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 // pouvoir sélectionner une ville, donc pas d'authentification requise ici.
 export async function POST(req: Request) {
   const body = await req.json();
-  const { nom, code_postal, code_insee, region } = body as {
+  const { nom, code_postal, code_insee, region, latitude, longitude } = body as {
     nom?: string;
     code_postal?: string;
     code_insee?: string;
     region?: string;
+    latitude?: number;
+    longitude?: number;
   };
+
+  // Les coordonnées viennent du client : on les borne au domaine valide plutôt
+  // que de faire confiance. Une paire incomplète ou hors bornes est ignorée, la
+  // ville reste enregistrable sans position.
+  const coordonneesValides =
+    typeof latitude === "number" &&
+    typeof longitude === "number" &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180;
 
   const nomPropre = nom?.trim();
 
@@ -28,7 +41,7 @@ export async function POST(req: Request) {
   // tout le site. On ne crée donc que ce qui n'existe pas encore.
   const { data: existing, error: lookupError } = await supabaseAdmin
     .from("cities")
-    .select("id, nom, code_postal")
+    .select("id, nom, code_postal, latitude")
     .eq("code_insee", code_insee!)
     .maybeSingle();
 
@@ -37,7 +50,18 @@ export async function POST(req: Request) {
   }
 
   if (existing) {
-    return Response.json({ city: existing });
+    // Les villes enregistrées avant l'ajout des coordonnées n'en ont pas :
+    // on complète au passage, sans jamais écraser une position déjà connue.
+    if (existing.latitude === null && coordonneesValides) {
+      await supabaseAdmin
+        .from("cities")
+        .update({ latitude, longitude })
+        .eq("id", existing.id);
+    }
+
+    return Response.json({
+      city: { id: existing.id, nom: existing.nom, code_postal: existing.code_postal },
+    });
   }
 
   const { data, error } = await supabaseAdmin
@@ -47,6 +71,8 @@ export async function POST(req: Request) {
       code_postal,
       code_insee,
       region: region?.trim().slice(0, 80) || null,
+      latitude: coordonneesValides ? latitude : null,
+      longitude: coordonneesValides ? longitude : null,
     })
     .select("id, nom, code_postal")
     .single();
