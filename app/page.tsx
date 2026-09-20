@@ -22,6 +22,7 @@ export default function Home() {
   const userId = useCurrentUserId();
   const [tab, setTab] = useState<Tab>("ville");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesEnEchec, setCategoriesEnEchec] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
   const [deals, setDeals] = useState<FeedDeal[]>([]);
@@ -74,7 +75,13 @@ export default function Home() {
       .from("categories")
       .select("id, nom, icone")
       .order("nom")
-      .then(({ data }) => setCategories(data ?? []));
+      .then(({ data, error }) => {
+        // L'erreur était avalée : la barre se réduisait au seul bouton
+        // « Tout », ce qui fait passer une panne pour une absence de
+        // catégories. Le fil reste utilisable, on le signale discrètement.
+        setCategoriesEnEchec(Boolean(error));
+        if (!error) setCategories(data ?? []);
+      });
   }, []);
 
   useEffect(() => {
@@ -310,12 +317,20 @@ export default function Home() {
                 {c.nom}
               </button>
             ))}
+            {categoriesEnEchec && (
+              <span className="text-xs text-ink/60 whitespace-nowrap">
+                Filtres indisponibles
+              </span>
+            )}
           </div>
 
           <div className="px-4 pb-3">
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
+              // Sans intitulé, le champ n'était annoncé que par l'option
+              // choisie : « Plus récents », sans dire de quoi il s'agit.
+              aria-label="Trier les bons plans"
               className="rounded-control border border-ink/15 px-3 py-1.5 text-sm bg-surface text-ink font-medium"
             >
               <option value="recent">Plus récents</option>

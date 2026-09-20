@@ -47,12 +47,13 @@ export default function ProfilPage() {
   const [state, setState] = useState<"loading" | "error" | "introuvable" | "ready">("loading");
   const [profil, setProfil] = useState<Profil | null>(null);
   const [trouvailles, setTrouvailles] = useState<Trouvaille[]>([]);
+  const [trouvaillesEnEchec, setTrouvaillesEnEchec] = useState(false);
   const [relation, setRelation] = useState<Relation>({ statut: "aucune" });
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
-    const [{ data: p, error }, { data: reposts }] = await Promise.all([
+    const [{ data: p, error }, { data: reposts, error: erreurTrouvailles }] = await Promise.all([
       supabase
         .from("users")
         .select("id, pseudo, avatar_url, bio, created_at, cities:city_id (nom)")
@@ -76,6 +77,11 @@ export default function ProfilPage() {
     }
 
     setProfil(p as unknown as Profil);
+
+    // L'échec porte sur la seule section « Ses trouvailles » : basculer toute
+    // la page en erreur masquerait le pseudo, la bio et les boutons d'amitié,
+    // qui eux ont bien été chargés.
+    setTrouvaillesEnEchec(Boolean(erreurTrouvailles));
 
     // Un bon plan retiré ou en attente de modération ne doit pas réapparaître
     // par la bande sur un profil.
@@ -275,10 +281,16 @@ export default function ProfilPage() {
 
         <section className="mt-7">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">
-            Ses trouvailles ({trouvailles.length})
+            Ses trouvailles{trouvaillesEnEchec ? "" : ` (${trouvailles.length})`}
           </h2>
 
-          {trouvailles.length === 0 ? (
+          {trouvaillesEnEchec ? (
+            <ErrorState
+              title="Trouvailles indisponibles"
+              description="Ses bons plans partagés n'ont pas pu être récupérés."
+              onRetry={charger}
+            />
+          ) : trouvailles.length === 0 ? (
             <EmptyState
               illustration={PanierVide}
               title="Rien de partagé pour l'instant"

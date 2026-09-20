@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Pencil, PackageX } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DealForm } from "@/components/DealForm";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 type Loaded = {
@@ -31,50 +32,69 @@ type Loaded = {
 export default function ModifierBonPlanPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [state, setState] = useState<"loading" | "not-found" | "ready">("loading");
+  const [state, setState] = useState<"loading" | "not-found" | "error" | "ready">("loading");
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  // `load` vit au niveau du composant, et non dans l'effet, pour que le bouton
+  // « Réessayer » de l'état d'erreur puisse l'appeler.
+  const load = useCallback(async () => {
+    setState("loading");
 
-      if (!user) {
-        router.push("/connexion");
-        return;
-      }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      const { data: deal } = await supabase
-        .from("deals")
-        .select(
-          "id, merchant_id, titre, description, photos, prix_avant, prix_apres, reduction_pourcentage, category_id, date_debut, date_fin, stock_limite, statut, merchant_profiles!inner(user_id)"
-        )
-        .eq("id", params.id)
-        .single();
-
-      if (!deal || (deal.merchant_profiles as unknown as { user_id: string }).user_id !== user.id) {
-        setState("not-found");
-        return;
-      }
-
-      const { data: dealCities } = await supabase
-        .from("deal_cities")
-        .select("city_id")
-        .eq("deal_id", deal.id);
-
-      setLoaded({
-        merchantId: deal.merchant_id,
-        deal: {
-          ...deal,
-          selectedCityIds: (dealCities ?? []).map((dc) => dc.city_id),
-        },
-      });
-      setState("ready");
+    if (!user) {
+      router.push("/connexion");
+      return;
     }
 
-    load();
+    const { data: deal, error } = await supabase
+      .from("deals")
+      .select(
+        "id, merchant_id, titre, description, photos, prix_avant, prix_apres, reduction_pourcentage, category_id, date_debut, date_fin, stock_limite, statut, merchant_profiles!inner(user_id)"
+      )
+      .eq("id", params.id)
+      .single();
+
+    // PGRST116 = aucune ligne : c'est bien « introuvable ». Toute autre erreur
+    // est une panne, et annoncer « ne t'appartient pas » à un commerçant
+    // légitime est le pire message qu'on puisse lui faire lire.
+    if (error && error.code !== "PGRST116") {
+      setState("error");
+      return;
+    }
+
+    if (!deal || (deal.merchant_profiles as unknown as { user_id: string }).user_id !== user.id) {
+      setState("not-found");
+      return;
+    }
+
+    const { data: dealCities, error: citiesError } = await supabase
+      .from("deal_cities")
+      .select("city_id")
+      .eq("deal_id", deal.id);
+
+    // Un échec ici pré-remplirait le formulaire sans ses villes : enregistrer
+    // effacerait silencieusement la diffusion existante.
+    if (citiesError) {
+      setState("error");
+      return;
+    }
+
+    setLoaded({
+      merchantId: deal.merchant_id,
+      deal: {
+        ...deal,
+        selectedCityIds: (dealCities ?? []).map((dc) => dc.city_id),
+      },
+    });
+    setState("ready");
   }, [params.id, router]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (state === "loading") {
     return (
@@ -82,6 +102,18 @@ export default function ModifierBonPlanPage() {
         <div className="max-w-sm mx-auto">
           <Skeleton className="h-96 w-full rounded-card" />
         </div>
+      </main>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
+        <ErrorState
+          title="Chargement impossible"
+          description="Ce bon plan n'a pas pu être récupéré."
+          onRetry={load}
+        />
       </main>
     );
   }

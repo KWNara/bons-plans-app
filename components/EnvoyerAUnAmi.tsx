@@ -18,6 +18,7 @@ export function EnvoyerAUnAmi({ dealId, userId }: Props) {
   const router = useRouter();
   const [ouvert, setOuvert] = useState(false);
   const [amis, setAmis] = useState<Ami[] | null>(null);
+  const [enEchec, setEnEchec] = useState(false);
   const [envoiVers, setEnvoiVers] = useState<string | null>(null);
   const [envoyes, setEnvoyes] = useState<string[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -43,13 +44,25 @@ export function EnvoyerAUnAmi({ dealId, userId }: Props) {
     };
   }, [ouvert]);
 
+  // `enEchec` en plus de `erreur` : le spinner était conditionné à
+  // `amis === null`, qui reste vrai après un échec. La fenêtre affichait donc
+  // « Chargement de tes amis… » juste sous le message d'erreur, et la garde
+  // `amis !== null` interdisait toute seconde tentative.
   useEffect(() => {
-    if (!ouvert || !userId || amis !== null) return;
+    if (!ouvert || !userId || amis !== null || enEchec) return;
 
     chargerRelations(userId)
       .then(({ amis }) => setAmis(amis))
-      .catch(() => setErreur("Ta liste d'amis n'a pas pu être chargée."));
-  }, [ouvert, userId, amis]);
+      .catch(() => {
+        setEnEchec(true);
+        setErreur("Ta liste d'amis n'a pas pu être chargée.");
+      });
+  }, [ouvert, userId, amis, enEchec]);
+
+  function reessayer() {
+    setErreur(null);
+    setEnEchec(false);
+  }
 
   function ouvrir() {
     if (!userId) {
@@ -112,7 +125,16 @@ export function EnvoyerAUnAmi({ dealId, userId }: Props) {
 
             {erreur && <p className="text-tag text-sm mb-3">{erreur}</p>}
 
-            {amis === null && (
+            {enEchec && (
+              <button
+                onClick={reessayer}
+                className="press w-full rounded-control border border-ink/15 py-2.5 text-sm font-medium text-ink"
+              >
+                Réessayer
+              </button>
+            )}
+
+            {amis === null && !enEchec && (
               <p className="flex items-center gap-2 text-sm text-ink/70 py-4">
                 <Spinner size={14} /> Chargement de tes amis…
               </p>

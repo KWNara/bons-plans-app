@@ -10,6 +10,7 @@ import { resolveCity, type BanSuggestion } from "@/lib/cities";
 import { FormInput, FormSelect } from "@/components/ui/FormField";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { ClocheAuRepos } from "@/components/ui/Illustrations";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -36,6 +37,7 @@ export default function AlertesPage() {
   const [motsCles, setMotsCles] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [creating, setCreating] = useState(false);
   const [busyRuleId, setBusyRuleId] = useState<string | null>(null);
 
@@ -63,11 +65,18 @@ export default function AlertesPage() {
   }, [router]);
 
   async function loadRules(uid: string) {
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("alert_rules")
       .select("id, actif, mots_cles, budget_max, cities:city_id (nom, code_postal), categories:category_id (nom)")
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
+
+    // Sans ce contrôle, une requête en échec affichait « Aucune alerte » à
+    // quelqu'un qui en a créé dix — et, juste après une création réussie,
+    // laissait croire qu'elle n'avait pas été enregistrée.
+    setLoadError(Boolean(loadError));
+    if (loadError) return;
+
     setRules((data as unknown as AlertRule[]) ?? []);
   }
 
@@ -242,7 +251,15 @@ export default function AlertesPage() {
           </button>
         </form>
 
-        {rules.length === 0 ? (
+        {loadError ? (
+          <ErrorState
+            title="Chargement impossible"
+            description="Tes alertes n'ont pas pu être récupérées."
+            onRetry={() => {
+              if (userId) loadRules(userId);
+            }}
+          />
+        ) : rules.length === 0 ? (
           <EmptyState
             illustration={ClocheAuRepos}
             title="Aucune alerte"

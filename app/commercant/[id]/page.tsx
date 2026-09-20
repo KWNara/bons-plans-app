@@ -65,12 +65,19 @@ export default function CommercantVitrinePage() {
 
     setMerchant(merchantRow);
 
-    const { data: dealRows } = await supabase
+    const { data: dealRows, error: dealsError } = await supabase
       .from("deals")
       .select("id, titre, photos, prix_avant, prix_apres, reduction_pourcentage, date_fin, likes_count, comments_count")
       .eq("merchant_id", merchantRow.id)
       .eq("statut", "publie")
       .order("created_at", { ascending: false });
+
+    // L'erreur du profil était traitée, pas celle-ci : la vitrine annonçait
+    // « Rien d'actif pour le moment » à un commerçant qui a des offres en ligne.
+    if (dealsError) {
+      setState("error");
+      return;
+    }
 
     setDeals(dealRows ?? []);
     setState("ready");

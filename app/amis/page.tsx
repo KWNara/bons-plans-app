@@ -33,6 +33,7 @@ export default function AmisPage() {
   const [terme, setTerme] = useState("");
   const [resultats, setResultats] = useState<Trouve[]>([]);
   const [recherche, setRecherche] = useState(false);
+  const [rechercheEnEchec, setRechercheEnEchec] = useState(false);
   const [occupe, setOccupe] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -76,11 +77,15 @@ export default function AmisPage() {
     }
 
     setRecherche(true);
+    setRechercheEnEchec(false);
     const timer = setTimeout(async () => {
       try {
         setResultats(await rechercherUtilisateurs(terme.trim(), moi));
       } catch {
+        // Confondre « la recherche a échoué » et « personne ne s'appelle
+        // comme ça » fait conclure à tort que l'ami n'est pas inscrit.
         setResultats([]);
+        setRechercheEnEchec(true);
       }
       setRecherche(false);
     }, 350);
@@ -153,7 +158,11 @@ export default function AmisPage() {
           )}
 
           {!recherche && terme.trim().length >= 2 && resultats.length === 0 && (
-            <p className="text-xs text-ink/60 mt-2">Aucun pseudo ne correspond.</p>
+            <p className={`text-xs mt-2 ${rechercheEnEchec ? "text-tag" : "text-ink/60"}`}>
+              {rechercheEnEchec
+                ? "La recherche n'a pas abouti. Réessaie."
+                : "Aucun pseudo ne correspond."}
+            </p>
           )}
 
           {resultats.length > 0 && (

@@ -36,6 +36,7 @@ export function CommentSection({
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [echecChargement, setEchecChargement] = useState(false);
 
   useEffect(() => {
     load();
@@ -53,11 +54,16 @@ export function CommentSection({
 
     // Sans ce contrôle, une base injoignable affichait « Sois le premier à
     // commenter » sur un bon plan qui a des dizaines de commentaires.
+    //
+    // L'échec de chargement a son propre état, distinct de `error` qui porte
+    // les échecs d'action : mélanger les deux affichait un bouton
+    // « Réessayer » rechargeant la liste après un échec de publication.
     if (loadError) {
-      setError("Les commentaires n'ont pas pu être chargés.");
+      setEchecChargement(true);
       return;
     }
 
+    setEchecChargement(false);
     const list = (data as unknown as Comment[]) ?? [];
     setComments(list);
     onCountChange?.(list.length);
@@ -113,6 +119,9 @@ export function CommentSection({
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            // Le seul intitulé était le marque-place, qui disparaît dès la
+            // première frappe : plus rien ne rappelait le rôle du champ.
+            aria-label="Ajouter un commentaire"
             placeholder="Ajouter un commentaire..."
             className="flex-1 rounded-control border border-ink/15 px-3.5 py-2.5 text-sm focus:border-teal"
           />
@@ -150,7 +159,22 @@ export function CommentSection({
         </div>
       )}
 
-      {!loading && comments.length === 0 && (
+      {!loading && echecChargement && (
+        <div className="flex flex-col items-center text-center py-6">
+          <p className="text-sm text-ink/70 mb-2">Les commentaires n&apos;ont pas pu être chargés.</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              load();
+            }}
+            className="press rounded-control border border-ink/15 px-4 py-2 text-sm font-medium text-ink"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {!loading && !echecChargement && comments.length === 0 && (
         <div className="flex flex-col items-center text-center py-6">
           <BulleSilencieuse size={68} />
           <p className="text-sm text-ink/60">Sois le premier à commenter.</p>
@@ -177,7 +201,10 @@ export function CommentSection({
               {c.user_id === userId && (
                 <button
                   onClick={() => handleDelete(c.id)}
-                  className="press text-xs text-ink/60 hover:text-tag mt-0.5"
+                  // Marges négatives compensées par le rembourrage : la cible
+                  // passe de 16 à 40 px sans décaler la mise en page. `mt-0.5`
+                  // est retiré, il annulait la marge négative du haut.
+                  className="press text-xs text-ink/60 hover:text-tag -mx-2 -my-2 px-2 py-3"
                 >
                   Supprimer
                 </button>

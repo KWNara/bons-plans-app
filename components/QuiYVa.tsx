@@ -25,23 +25,37 @@ export function QuiYVa({ dealId, userId }: Props) {
   const [total, setTotal] = useState(0);
   const [jyVais, setJyVais] = useState(false);
   const [pret, setPret] = useState(false);
+  const [enEchec, setEnEchec] = useState(false);
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
-    const [{ data: lignes }, { data: nombre }] = await Promise.all([
-      supabase
-        .from("deal_participations")
-        .select("user_id, users:user_id (id, pseudo, avatar_url)")
-        .eq("deal_id", dealId),
-      supabase.rpc("compte_participants", { p_deal_id: dealId }),
-    ]);
+    const [{ data: lignes, error: erreurListe }, { data: nombre, error: erreurTotal }] =
+      await Promise.all([
+        supabase
+          .from("deal_participations")
+          .select("user_id, users:user_id (id, pseudo, avatar_url)")
+          .eq("deal_id", dealId),
+        supabase.rpc("compte_participants", { p_deal_id: dealId }),
+      ]);
+
+    // Sans ce contrôle, une requête en échec renvoyait un total à zéro et le
+    // bloc annonçait « Personne n'a encore dit y aller » sur une offre qui
+    // compte déjà des participants. Pire : les deux requêtes étant
+    // indépendantes, un échec du seul compteur affichait les avatars des amis
+    // juste sous cette phrase. Mieux vaut ne rien montrer que mentir.
+    if (erreurListe || erreurTotal) {
+      setEnEchec(true);
+      setPret(true);
+      return;
+    }
 
     const visibles = (lignes ?? []) as unknown as {
       user_id: string;
       users: Participant | null;
     }[];
 
+    setEnEchec(false);
     setJyVais(visibles.some((l) => l.user_id === userId));
     setAmis(
       visibles
@@ -101,11 +115,24 @@ export function QuiYVa({ dealId, userId }: Props) {
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-ink">Qui y va ?</p>
-          <p className="text-sm text-ink/70">{phrase}</p>
+          <p className="text-sm text-ink/70">
+            {enEchec ? "La liste n'a pas pu être chargée." : phrase}
+          </p>
         </div>
+        {enEchec && (
+          <button
+            onClick={() => {
+              setPret(false);
+              charger();
+            }}
+            className="press rounded-control border border-ink/15 px-3 py-2 text-sm font-medium text-ink shrink-0"
+          >
+            Réessayer
+          </button>
+        )}
       </div>
 
-      {amis.length > 0 && (
+      {!enEchec && amis.length > 0 && (
         <ul className="flex items-center mt-3 ml-12">
           {amis.slice(0, 6).map((a) => (
             <li key={a.id} className="-ml-2 first:ml-0">
@@ -129,23 +156,29 @@ export function QuiYVa({ dealId, userId }: Props) {
 
       {erreur && <p className="text-tag text-sm mt-3">{erreur}</p>}
 
-      <button
-        onClick={basculer}
-        disabled={occupe}
-        aria-pressed={jyVais}
-        className={`press w-full mt-3 rounded-control py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-60 ${
-          jyVais
-            ? "bg-teal/10 text-teal border border-teal/30"
-            : "bg-teal text-white shadow-soft"
-        }`}
-      >
-        {occupe ? <Spinner size={15} /> : jyVais ? <Check size={16} /> : null}
-        {jyVais ? "Tu y vas" : "J'y vais"}
-      </button>
+      {/* Tant qu'on ne sait pas où l'on en est, proposer « J'y vais » ferait
+          courir le risque d'un doublon invisible pour l'utilisateur. */}
+      {!enEchec && (
+        <>
+          <button
+            onClick={basculer}
+            disabled={occupe}
+            aria-pressed={jyVais}
+            className={`press w-full mt-3 rounded-control py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-60 ${
+              jyVais
+                ? "bg-teal/10 text-teal border border-teal/30"
+                : "bg-teal text-white shadow-soft"
+            }`}
+          >
+            {occupe ? <Spinner size={15} /> : jyVais ? <Check size={16} /> : null}
+            {jyVais ? "Tu y vas" : "J'y vais"}
+          </button>
 
-      <p className="text-xs text-ink/60 mt-2 text-center">
-        Seuls tes amis voient que tu y vas.
-      </p>
+          <p className="text-xs text-ink/60 mt-2 text-center">
+            Seuls tes amis voient que tu y vas.
+          </p>
+        </>
+      )}
     </div>
   );
 }

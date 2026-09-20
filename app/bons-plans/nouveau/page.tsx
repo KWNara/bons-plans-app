@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, PlusCircle, ShieldAlert, Clock3, Crown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DealForm } from "@/components/DealForm";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 type Gate =
   | { status: "loading" }
+  | { status: "error" }
   | { status: "non-commercant" }
   | { status: "en-attente" }
   | { status: "quota-atteint" }
@@ -32,58 +34,82 @@ export default function NouveauBonPlanPage() {
   const router = useRouter();
   const [gate, setGate] = useState<Gate>({ status: "loading" });
 
-  useEffect(() => {
-    async function check() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  // Hors de l'effet pour que « Réessayer » puisse relancer la vérification.
+  const check = useCallback(async () => {
+    setGate({ status: "loading" });
 
-      if (!user) {
-        router.push("/connexion");
-        return;
-      }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      const { data: userRow } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (userRow?.role !== "commercant") {
-        setGate({ status: "non-commercant" });
-        return;
-      }
-
-      const { data: merchant } = await supabase
-        .from("merchant_profiles")
-        .select("id, statut_verification, plan")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!merchant || merchant.statut_verification !== "verifie") {
-        setGate({ status: "en-attente" });
-        return;
-      }
-
-      if (merchant.plan === "gratuit") {
-        const { count } = await supabase
-          .from("deals")
-          .select("id", { count: "exact", head: true })
-          .eq("merchant_id", merchant.id)
-          .eq("statut", "publie")
-          .or(`date_fin.is.null,date_fin.gt.${new Date().toISOString()}`);
-
-        if ((count ?? 0) >= 3) {
-          setGate({ status: "quota-atteint" });
-          return;
-        }
-      }
-
-      setGate({ status: "ok", merchantId: merchant.id });
+    if (!user) {
+      router.push("/connexion");
+      return;
     }
 
-    check();
+    const { data: userRow, error: roleError } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    // Une panne ne doit pas se traduire par « Réservé aux commerçants » : le
+    // commerçant vérifié se voyait alors proposer de redéposer un dossier,
+    // une impasse pire que l'absence de page. PGRST116 (aucune ligne) reste
+    // en revanche un vrai « non-commerçant ».
+    if (roleError && roleError.code !== "PGRST116") {
+      setGate({ status: "error" });
+      return;
+    }
+
+    if (userRow?.role !== "commercant") {
+      setGate({ status: "non-commercant" });
+      return;
+    }
+
+    const { data: merchant, error: merchantError } = await supabase
+      .from("merchant_profiles")
+      .select("id, statut_verification, plan")
+      .eq("user_id", user.id)
+      .single();
+
+    if (merchantError && merchantError.code !== "PGRST116") {
+      setGate({ status: "error" });
+      return;
+    }
+
+    if (!merchant || merchant.statut_verification !== "verifie") {
+      setGate({ status: "en-attente" });
+      return;
+    }
+
+    if (merchant.plan === "gratuit") {
+      const { count, error: countError } = await supabase
+        .from("deals")
+        .select("id", { count: "exact", head: true })
+        .eq("merchant_id", merchant.id)
+        .eq("statut", "publie")
+        .or(`date_fin.is.null,date_fin.gt.${new Date().toISOString()}`);
+
+      // Un décompte raté vaut mieux annoncé que supposé nul : laisser passer
+      // ouvrirait un formulaire que le déclencheur de quota rejettera ensuite.
+      if (countError) {
+        setGate({ status: "error" });
+        return;
+      }
+
+      if ((count ?? 0) >= 3) {
+        setGate({ status: "quota-atteint" });
+        return;
+      }
+    }
+
+    setGate({ status: "ok", merchantId: merchant.id });
   }, [router]);
+
+  useEffect(() => {
+    check();
+  }, [check]);
 
   if (gate.status === "loading") {
     return (
@@ -91,6 +117,21 @@ export default function NouveauBonPlanPage() {
         <div className="max-w-sm mx-auto">
           <BackBar />
           <Skeleton className="h-96 w-full rounded-card" />
+        </div>
+      </main>
+    );
+  }
+
+  if (gate.status === "error") {
+    return (
+      <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
+        <div className="max-w-sm mx-auto">
+          <BackBar />
+          <ErrorState
+            title="Chargement impossible"
+            description="Ton compte n'a pas pu être vérifié."
+            onRetry={check}
+          />
         </div>
       </main>
     );

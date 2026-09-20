@@ -79,6 +79,12 @@ export function CitySearchInput({ onSelect, placeholder, label }: Props) {
         </p>
       )}
 
+      {/* Une réponse valide sans résultat ne déclenche ni `loading` ni
+          `failed` : le champ restait alors parfaitement muet. */}
+      {!loading && !failed && query.trim().length >= 2 && suggestions.length === 0 && (
+        <p className="text-xs text-ink/60 mt-1.5">Aucune ville ne correspond.</p>
+      )}
+
       {suggestions.length > 0 && (
         <ul className="absolute z-10 w-full bg-surface border border-ink/10 rounded-control mt-1 shadow-raised max-h-60 overflow-auto">
           {suggestions.map((s) => (
