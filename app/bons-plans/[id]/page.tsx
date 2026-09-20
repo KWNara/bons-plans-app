@@ -12,6 +12,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { RepostButton } from "@/components/RepostButton";
 import { CommentSection } from "@/components/CommentSection";
 import { ShareButton } from "@/components/ShareButton";
+import { EnvoyerAUnAmi } from "@/components/EnvoyerAUnAmi";
 import { ReportButton } from "@/components/ReportButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -268,6 +269,9 @@ export default function BonPlanDetailPage() {
                 initialCount={deal.reposts_count}
                 allowComment
               />
+            </span>
+            <span className="ml-2">
+              <EnvoyerAUnAmi dealId={deal.id} userId={userId} />
             </span>
             <span className="ml-2">
               <ShareButton titre={deal.titre} enseigne={deal.merchant_profiles?.nom_enseigne} />

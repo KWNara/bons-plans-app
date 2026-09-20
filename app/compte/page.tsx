@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, ShieldCheck, Clock, Store, Repeat2, Bookmark, LogOut, Camera } from "lucide-react";
+import { ChevronLeft, MapPin, ShieldCheck, Clock, Store, Repeat2, Bookmark, LogOut, Camera, Users, MessagesSquare } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
@@ -514,6 +514,26 @@ export default function ComptePage() {
             Devenir commerçant
           </Link>
         )}
+
+        <Card>
+          <CardLabel>Social</CardLabel>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/amis"
+              className="press flex flex-col items-center gap-1.5 rounded-control border border-ink/15 py-3 text-sm font-medium text-ink hover:bg-paper"
+            >
+              <Users size={17} className="text-teal" />
+              Mes amis
+            </Link>
+            <Link
+              href="/messages"
+              className="press flex flex-col items-center gap-1.5 rounded-control border border-ink/15 py-3 text-sm font-medium text-ink hover:bg-paper"
+            >
+              <MessagesSquare size={17} className="text-teal" />
+              Messages
+            </Link>
+          </div>
+        </Card>
 
         <Card>
           <CardLabel>Apparence</CardLabel>
