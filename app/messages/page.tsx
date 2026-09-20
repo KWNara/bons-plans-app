@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MessagesSquare, UserPlus } from "lucide-react";
+import { ChevronLeft, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { BulleSilencieuse } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Avatar } from "@/components/ui/Avatar";
 
@@ -149,7 +150,7 @@ export default function MessagesPage() {
 
         {state === "ready" && conversations.length === 0 && (
           <EmptyState
-            icon={MessagesSquare}
+            illustration={BulleSilencieuse}
             title="Aucune conversation"
             description="Ajoute des amis pour leur partager tes trouvailles et en discuter."
             action={

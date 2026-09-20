@@ -12,6 +12,7 @@ import { FollowMerchantButton } from "@/components/FollowMerchantButton";
 import { ReportButton } from "@/components/ReportButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PanierVide } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 type Merchant = {
@@ -208,7 +209,7 @@ export default function CommercantVitrinePage() {
           </p>
           {actifs.length === 0 ? (
             <EmptyState
-              icon={Sparkles}
+              illustration={PanierVide}
               title="Rien d'actif pour le moment"
               description="Reviens bientôt découvrir ses prochaines offres."
             />

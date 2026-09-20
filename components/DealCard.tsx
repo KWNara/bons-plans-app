@@ -6,6 +6,7 @@ import { LikeButton } from "@/components/LikeButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { RepostButton } from "@/components/RepostButton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { BadgeReduction } from "@/components/ui/BadgeReduction";
 
 export type FeedDeal = {
   id: string;
@@ -68,8 +69,8 @@ export function DealCard({
             </div>
           )}
           {badge && (
-            <div className="absolute top-3 left-0 bg-tag text-white text-sm font-bold px-3 py-1 rounded-r-full shadow-soft">
-              {badge}
+            <div className="absolute top-3 left-3">
+              <BadgeReduction>{badge}</BadgeReduction>
             </div>
           )}
         </Link>

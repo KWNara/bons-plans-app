@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Send, MessageCircle } from "lucide-react";
+import { Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
+import { BulleSilencieuse } from "@/components/ui/Illustrations";
 
 type Comment = {
   id: string;
@@ -150,8 +151,8 @@ export function CommentSection({
       )}
 
       {!loading && comments.length === 0 && (
-        <div className="flex flex-col items-center text-center py-8">
-          <MessageCircle size={22} className="text-ink/20 mb-2" strokeWidth={1.5} />
+        <div className="flex flex-col items-center text-center py-6">
+          <BulleSilencieuse size={68} />
           <p className="text-sm text-ink/60">Sois le premier à commenter.</p>
         </div>
       )}

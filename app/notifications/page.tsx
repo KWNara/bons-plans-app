@@ -9,7 +9,6 @@ import {
   Store,
   Bell,
   ChevronLeft,
-  BellOff,
   UserPlus,
   UserCheck,
   MessagesSquare,
@@ -18,6 +17,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ClocheAuRepos } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 type Notification = {
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
 
         {state === "ready" && notifications.length === 0 && (
           <EmptyState
-            icon={BellOff}
+            illustration={ClocheAuRepos}
             title="Aucune notification"
             description="Les demandes d'amis, les messages et les réactions à tes bons plans s'afficheront ici."
           />

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, UserPlus, UserCheck, Check, MessageCircle, Sparkles } from "lucide-react";
+import { ChevronLeft, MapPin, UserPlus, UserCheck, Check, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { discountLabel } from "@/lib/dealFormat";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
@@ -12,6 +12,7 @@ import { envoyerDemande, relationAvec, repondreDemande, retirerAmi, type Relatio
 import { Avatar } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PanierVide } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -279,7 +280,7 @@ export default function ProfilPage() {
 
           {trouvailles.length === 0 ? (
             <EmptyState
-              icon={Sparkles}
+              illustration={PanierVide}
               title="Rien de partagé pour l'instant"
               description={`${profil?.pseudo} n'a pas encore relayé de bon plan.`}
             />

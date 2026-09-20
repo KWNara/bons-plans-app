@@ -10,6 +10,7 @@ import { DealCard, type FeedDeal } from "@/components/DealCard";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { DealCardSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PanierVide, RechercheVide } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 type Category = { id: string; nom: string; icone: string | null };
@@ -364,6 +365,10 @@ export default function Home() {
 
         {selectedCity && !feedLoading && !feedError && displayedDeals.length === 0 && (
           <EmptyState
+            // Un filtre actif, c'est une recherche sans résultat ; sans filtre,
+            // c'est la ville qui est encore vide. Deux situations différentes,
+            // deux dessins.
+            illustration={categoryId ? RechercheVide : PanierVide}
             title="Aucun bon plan pour l'instant"
             description={
               categoryId

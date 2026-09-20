@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Pencil, Trash2, PackageSearch } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PanierVide } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
 import { QuotaDepasseBanner } from "@/components/QuotaDepasseBanner";
@@ -158,7 +159,7 @@ export default function MesBonsPlansPage() {
 
         {state === "ready" && deals.length === 0 && (
           <EmptyState
-            icon={PackageSearch}
+            illustration={PanierVide}
             title="Aucun bon plan pour l'instant"
             description="Publie ta première offre pour la faire apparaître dans le fil de ta ville."
             action={

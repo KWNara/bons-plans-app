@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, BellPlus, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
+import { ChevronLeft, MapPin, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
 import { FormInput, FormSelect } from "@/components/ui/FormField";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ClocheAuRepos } from "@/components/ui/Illustrations";
 import { Spinner } from "@/components/ui/Spinner";
 
 type Category = { id: string; nom: string };
@@ -243,7 +244,7 @@ export default function AlertesPage() {
 
         {rules.length === 0 ? (
           <EmptyState
-            icon={BellPlus}
+            illustration={ClocheAuRepos}
             title="Aucune alerte"
             description="Crée une alerte pour être prévenu dès qu'un bon plan correspond à ce que tu cherches."
           />

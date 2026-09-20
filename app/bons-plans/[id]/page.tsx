@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Avatar } from "@/components/ui/Avatar";
+import { BadgeReduction } from "@/components/ui/BadgeReduction";
 
 type Detail = {
   id: string;
@@ -194,8 +195,8 @@ export default function BonPlanDetailPage() {
             </div>
           )}
           {badge && (
-            <div className="absolute bottom-0 left-0 bg-tag text-white text-base font-bold px-4 py-1.5 rounded-tr-2xl shadow-soft">
-              {badge}
+            <div className="absolute bottom-4 left-4">
+              <BadgeReduction taille="detail">{badge}</BadgeReduction>
             </div>
           )}
           {deal.photos.length > 1 && (

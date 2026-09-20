@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, UserPlus, Check, X, Users, Search, MessageCircle } from "lucide-react";
+import { ChevronLeft, UserPlus, Check, X, Search, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   chargerRelations,
@@ -15,6 +15,7 @@ import {
 } from "@/lib/amis";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { AmisAbsents } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
 import { Avatar } from "@/components/ui/Avatar";
@@ -275,7 +276,7 @@ export default function AmisPage() {
 
               {amis.length === 0 ? (
                 <EmptyState
-                  icon={Users}
+                  illustration={AmisAbsents}
                   title="Aucun ami pour l'instant"
                   description="Cherche le pseudo de quelqu'un que tu connais pour lui envoyer une demande."
                 />
