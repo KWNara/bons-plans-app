@@ -2,7 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MapPin, ChevronDown, Bell, UserRound, BellPlus, MapPinOff } from "lucide-react";
+// `Map` est aliasé : importé tel quel, il masque le Map natif utilisé plus bas
+// pour compter les catégories, et `new Map()` cesse de compiler.
+import {
+  MapPin,
+  ChevronDown,
+  Bell,
+  UserRound,
+  BellPlus,
+  MapPinOff,
+  Zap,
+  Map as MapIcon,
+} from "lucide-react";
+import { estFlash } from "@/lib/dealFormat";
 import { supabase } from "@/lib/supabase";
 import { useCity } from "@/lib/cityContext";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
@@ -23,6 +35,7 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("ville");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesEnEchec, setCategoriesEnEchec] = useState(false);
+  const [flashSeul, setFlashSeul] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
   const [deals, setDeals] = useState<FeedDeal[]>([]);
@@ -198,7 +211,12 @@ export default function Home() {
   }, [selectedCity, categoryId, sort, userId, reloadTick]);
 
   const displayedDeals = useMemo(() => {
-    if (tab === "ville") return deals;
+    // Le filtre flash se calcule ici et non dans la requête : « se termine dans
+    // moins de 24 h » est une fenêtre glissante, la mettre dans le SQL
+    // obligerait à relancer la requête à chaque minute pour rester juste.
+    const base = flashSeul ? deals.filter((d) => estFlash(d.date_fin)) : deals;
+
+    if (tab === "ville") return base;
 
     // "Pour toi" : priorise commerçants suivis, puis catégories les plus
     // likées. Sans historique (nouvel utilisateur), le score est nul pour
@@ -209,8 +227,10 @@ export default function Home() {
       return 0;
     }
 
-    return [...deals].sort((a, b) => score(b) - score(a));
-  }, [tab, deals, followedMerchantIds, topCategoryIds]);
+    return [...base].sort((a, b) => score(b) - score(a));
+  }, [tab, deals, flashSeul, followedMerchantIds, topCategoryIds]);
+
+  const nombreFlash = useMemo(() => deals.filter((d) => estFlash(d.date_fin)).length, [deals]);
 
   if (!loaded) return null;
 
@@ -227,6 +247,13 @@ export default function Home() {
             <ChevronDown size={16} className="text-ink/60 shrink-0" />
           </Link>
           <nav className="flex items-center gap-1 text-ink/70">
+            <Link
+              href="/carte"
+              aria-label="Voir la carte"
+              className="press p-2 rounded-full hover:bg-ink/5"
+            >
+              <MapIcon size={20} />
+            </Link>
             <Link
               href="/alertes"
               aria-label="Mes alertes"
@@ -289,6 +316,22 @@ export default function Home() {
       {selectedCity && (
         <>
           <div className="flex items-center gap-2 overflow-x-auto px-4 py-3 no-scrollbar">
+            {/* Le filtre flash n'apparaît que s'il a quelque chose à montrer :
+                une puce qui ne renvoie jamais rien use la confiance. */}
+            {nombreFlash > 0 && (
+              <button
+                onClick={() => setFlashSeul((v) => !v)}
+                aria-pressed={flashSeul}
+                className={`press flex items-center gap-1 whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${
+                  flashSeul
+                    ? "bg-marigold text-contrast border-marigold"
+                    : "bg-marigold/15 text-ink border-marigold/40 hover:border-marigold"
+                }`}
+              >
+                <Zap size={13} strokeWidth={2.5} />
+                Flash · {nombreFlash}
+              </button>
+            )}
             <button
               onClick={() => setCategoryId(null)}
               className={`press whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
@@ -383,12 +426,14 @@ export default function Home() {
             // Un filtre actif, c'est une recherche sans résultat ; sans filtre,
             // c'est la ville qui est encore vide. Deux situations différentes,
             // deux dessins.
-            illustration={categoryId ? RechercheVide : PanierVide}
-            title="Aucun bon plan pour l'instant"
+            illustration={categoryId || flashSeul ? RechercheVide : PanierVide}
+            title={flashSeul ? "Aucune offre flash ici" : "Aucun bon plan pour l'instant"}
             description={
-              categoryId
-                ? "Essaie une autre catégorie, ou reviens bientôt."
-                : "Reviens bientôt, ou suis un commerçant pour être prévenu à sa prochaine publication."
+              flashSeul
+                ? "Rien ne se termine dans les 24 heures avec ce filtre."
+                : categoryId
+                  ? "Essaie une autre catégorie, ou reviens bientôt."
+                  : "Reviens bientôt, ou suis un commerçant pour être prévenu à sa prochaine publication."
             }
           />
         )}

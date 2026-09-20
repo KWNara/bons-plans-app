@@ -7,6 +7,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { RepostButton } from "@/components/RepostButton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { BadgeReduction } from "@/components/ui/BadgeReduction";
+import { BadgeFlash } from "@/components/ui/BadgeFlash";
 
 export type FeedDeal = {
   id: string;
@@ -73,6 +74,9 @@ export function DealCard({
               <BadgeReduction>{badge}</BadgeReduction>
             </div>
           )}
+          <div className="absolute bottom-3 left-3">
+            <BadgeFlash dateFin={deal.date_fin} />
+          </div>
         </Link>
         <FavoriteButton
           dealId={deal.id}

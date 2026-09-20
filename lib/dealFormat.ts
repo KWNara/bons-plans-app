@@ -30,6 +30,37 @@ export function isExpired(dateFin: string | null): boolean {
   return new Date(dateFin).getTime() <= Date.now();
 }
 
+export const FENETRE_FLASH_MS = 24 * 3_600_000;
+
+/**
+ * Un bon plan « flash » est une offre qui se termine dans moins de 24 heures.
+ *
+ * C'est une propriété dérivée de `date_fin`, pas un champ en base : le statut
+ * s'éteint tout seul au bon moment. Stocker un booléen aurait demandé une tâche
+ * planifiée pour l'éteindre, et affiché « Flash » sur des offres terminées
+ * depuis des semaines en cas de panne de cette tâche.
+ */
+export function estFlash(dateFin: string | null, maintenant = Date.now()): boolean {
+  if (!dateFin) return false;
+  const restant = new Date(dateFin).getTime() - maintenant;
+  return restant > 0 && restant <= FENETRE_FLASH_MS;
+}
+
+/** Compte à rebours court, pensé pour un badge : « 3 h 05 », « 12 min ». */
+export function compteARebours(dateFin: string | null, maintenant = Date.now()): string | null {
+  if (!dateFin) return null;
+
+  const restant = new Date(dateFin).getTime() - maintenant;
+  if (restant <= 0) return null;
+
+  const heures = Math.floor(restant / 3_600_000);
+  const minutes = Math.floor((restant % 3_600_000) / 60_000);
+
+  // Sous l'heure, les heures à zéro n'apportent rien et mangent la place.
+  if (heures === 0) return `${minutes} min`;
+  return `${heures} h ${String(minutes).padStart(2, "0")}`;
+}
+
 export function formatTimeRemaining(dateFin: string | null): string {
   if (!dateFin) return "Sans limite de temps";
 
@@ -39,7 +70,21 @@ export function formatTimeRemaining(dateFin: string | null): string {
   // affichait « Expire aujourd'hui » toute l'année.
   if (diffMs <= 0) return "Offre terminée";
 
-  const days = Math.ceil(diffMs / 86_400_000);
+  // Le compte se fait en jours calendaires, pas en tranches de 24 heures : une
+  // offre qui se termine ce matin à 7 h était annoncée « Expire demain », parce
+  // que l'écart restant arrondissait à un jour.
+  const fin = new Date(dateFin);
+  const maintenant = new Date();
+  const jourFin = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate());
+  const jourMaintenant = new Date(
+    maintenant.getFullYear(),
+    maintenant.getMonth(),
+    maintenant.getDate()
+  );
+
+  const days = Math.round((jourFin.getTime() - jourMaintenant.getTime()) / 86_400_000);
+
+  if (days === 0) return "Expire aujourd'hui";
   if (days === 1) return "Expire demain";
   if (days <= 30) return `Expire dans ${days} jours`;
 

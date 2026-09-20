@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Avatar } from "@/components/ui/Avatar";
 import { BadgeReduction } from "@/components/ui/BadgeReduction";
+import { BadgeFlash } from "@/components/ui/BadgeFlash";
 
 type Detail = {
   id: string;
@@ -294,7 +295,10 @@ export default function BonPlanDetailPage() {
             </span>
           </div>
 
-          <p className="text-xs text-ink/60 mt-2">{formatTimeRemaining(deal.date_fin)}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-xs text-ink/60">{formatTimeRemaining(deal.date_fin)}</p>
+            <BadgeFlash dateFin={deal.date_fin} />
+          </div>
 
           <QuiYVa dealId={deal.id} userId={userId} />
 

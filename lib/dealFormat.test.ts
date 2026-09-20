@@ -1,11 +1,61 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  compteARebours,
   discountLabel,
   endOfDayIso,
+  estFlash,
   formatTimeRemaining,
   isExpired,
   startOfDayIso,
 } from "./dealFormat";
+
+describe("estFlash", () => {
+  const maintenant = new Date("2026-09-21T12:00:00Z").getTime();
+
+  it("retient une offre qui se termine dans quelques heures", () => {
+    expect(estFlash("2026-09-21T18:00:00Z", maintenant)).toBe(true);
+  });
+
+  it("retient la limite exacte des 24 heures", () => {
+    expect(estFlash("2026-09-22T12:00:00Z", maintenant)).toBe(true);
+  });
+
+  it("écarte une offre qui dure plus de 24 heures", () => {
+    expect(estFlash("2026-09-22T12:00:01Z", maintenant)).toBe(false);
+  });
+
+  // Sans ce garde-fou, une offre terminée depuis des mois restait « flash » :
+  // son écart au présent est bien inférieur à 24 h, mais du mauvais côté.
+  it("écarte une offre déjà terminée", () => {
+    expect(estFlash("2026-09-21T11:59:59Z", maintenant)).toBe(false);
+    expect(estFlash("2026-01-01T00:00:00Z", maintenant)).toBe(false);
+  });
+
+  it("écarte une offre sans date de fin", () => {
+    expect(estFlash(null, maintenant)).toBe(false);
+  });
+});
+
+describe("compteARebours", () => {
+  const maintenant = new Date("2026-09-21T12:00:00Z").getTime();
+
+  it("affiche heures et minutes au-delà d'une heure", () => {
+    expect(compteARebours("2026-09-21T15:05:00Z", maintenant)).toBe("3 h 05");
+  });
+
+  it("complète les minutes sur deux chiffres", () => {
+    expect(compteARebours("2026-09-21T13:07:00Z", maintenant)).toBe("1 h 07");
+  });
+
+  it("passe aux minutes seules sous l'heure", () => {
+    expect(compteARebours("2026-09-21T12:42:00Z", maintenant)).toBe("42 min");
+  });
+
+  it("ne renvoie rien pour une offre terminée ou sans échéance", () => {
+    expect(compteARebours("2026-09-21T11:00:00Z", maintenant)).toBeNull();
+    expect(compteARebours(null, maintenant)).toBeNull();
+  });
+});
 
 describe("discountLabel", () => {
   it("privilégie le pourcentage saisi par le commerçant", () => {
@@ -75,9 +125,22 @@ describe("formatTimeRemaining", () => {
     expect(formatTimeRemaining(enMars)).toBe("Offre terminée");
   });
 
-  it("annonce demain pour une fin dans les prochaines 24 heures", () => {
+  it("annonce demain pour une fin le lendemain", () => {
     const demain = new Date(2026, 8, 21, 10, 0, 0).toISOString();
     expect(formatTimeRemaining(demain)).toBe("Expire demain");
+  });
+
+  // Une offre flash qui se termine ce soir était annoncée « Expire demain » :
+  // l'écart restant, inférieur à 24 h, arrondissait à un jour entier.
+  it("annonce aujourd'hui pour une fin dans la journée", () => {
+    const ceSoir = new Date(2026, 8, 20, 23, 30, 0).toISOString();
+    expect(formatTimeRemaining(ceSoir)).toBe("Expire aujourd'hui");
+  });
+
+  // Le cas inverse : moins de 24 h d'écart, mais on a changé de jour.
+  it("annonce demain même pour une fin toute proche le lendemain matin", () => {
+    const demainMatin = new Date(2026, 8, 21, 7, 0, 0).toISOString();
+    expect(formatTimeRemaining(demainMatin)).toBe("Expire demain");
   });
 
   it("compte les jours restants sur un horizon court", () => {

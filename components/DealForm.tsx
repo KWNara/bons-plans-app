@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ImagePlus, X, AlertTriangle, Tag, Percent } from "lucide-react";
+import { ImagePlus, X, AlertTriangle, Tag, Percent, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { FormInput, FormTextarea, FormSelect } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
@@ -527,6 +527,22 @@ export function DealForm({ merchantId, existingDeal }: Props) {
           <FormInput label="Fin" type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
         </div>
       </div>
+
+      {/* Les dates sont à la journée : une offre « flash » se termine donc ce
+          soir à 23 h 59, ce que le raccourci dit explicitement pour éviter la
+          lecture « 24 heures à partir de maintenant ». */}
+      <button
+        type="button"
+        onClick={() => {
+          const aujourdHui = new Date();
+          setDateDebut(toDateInputValue(aujourdHui.toISOString()));
+          setDateFin(toDateInputValue(aujourdHui.toISOString()));
+        }}
+        className="press -mt-2 inline-flex items-center gap-1.5 rounded-control border border-marigold/40 bg-marigold/15 px-3 py-2 text-sm font-semibold text-ink"
+      >
+        <Zap size={14} strokeWidth={2.5} className="text-marigold" />
+        Offre flash — se termine ce soir
+      </button>
 
       <FormInput
         label="Stock limité (optionnel)"
