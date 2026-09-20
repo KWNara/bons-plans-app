@@ -46,7 +46,7 @@ function BackButton() {
     <Link
       href="/"
       aria-label="Retour au fil"
-      className="press absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-soft"
+      className="press absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-surface/90 backdrop-blur flex items-center justify-center shadow-soft"
     >
       <ChevronLeft size={20} className="text-ink" />
     </Link>
@@ -196,7 +196,7 @@ export default function BonPlanDetailPage() {
           {deal.merchant_profiles && (
             <Link
               href={`/commercant/${deal.merchant_profiles.id}`}
-              className="press inline-flex items-center gap-2 -ml-1 pl-1 pr-2 py-1 rounded-control hover:bg-white"
+              className="press inline-flex items-center gap-2 -ml-1 pl-1 pr-2 py-1 rounded-control hover:bg-surface"
             >
               {deal.merchant_profiles.logo_url ? (
                 <img
@@ -231,14 +231,14 @@ export default function BonPlanDetailPage() {
 
           <div className="flex flex-wrap gap-2 text-sm text-ink/60 mb-5">
             {deal.categories && (
-              <span className="rounded-full bg-white border border-ink/10 px-3 py-1">
+              <span className="rounded-full bg-surface border border-ink/10 px-3 py-1">
                 {deal.categories.nom}
               </span>
             )}
             {villes.map((v) => (
               <span
                 key={v.nom + v.code_postal}
-                className="rounded-full bg-white border border-ink/10 px-3 py-1 flex items-center gap-1"
+                className="rounded-full bg-surface border border-ink/10 px-3 py-1 flex items-center gap-1"
               >
                 <MapPin size={14} /> {v.nom}
               </span>
@@ -286,7 +286,7 @@ export default function BonPlanDetailPage() {
           <p className="text-xs text-ink/60 mt-2">{formatTimeRemaining(deal.date_fin)}</p>
 
           {deal.merchant_profiles?.description && (
-            <div className="mt-6 rounded-card border border-ink/10 bg-white/60 p-4">
+            <div className="mt-6 rounded-card border border-ink/10 bg-surface/60 p-4">
               <p className="text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1.5">
                 À propos de {deal.merchant_profiles.nom_enseigne}
               </p>

@@ -1,18 +1,24 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
+      // Les couleurs passent par des variables CSS plutôt que par des valeurs
+      // figées : le thème sombre se contente de redéfinir les variables, sans
+      // qu'il faille ajouter une variante `dark:` sur les ~400 usages existants.
       colors: {
-        paper: "#EFF0E4",
-        ink: "#20263B",
-        marigold: "#E3A23C",
-        tag: "#C1432A",
-        teal: "#2F6E64",
+        paper: "rgb(var(--c-paper) / <alpha-value>)",
+        surface: "rgb(var(--c-surface) / <alpha-value>)",
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        contrast: "rgb(var(--c-contrast) / <alpha-value>)",
+        marigold: "rgb(var(--c-marigold) / <alpha-value>)",
+        tag: "rgb(var(--c-tag) / <alpha-value>)",
+        teal: "rgb(var(--c-teal) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-body)", "system-ui", "sans-serif"],
@@ -22,8 +28,8 @@ const config: Config = {
         control: "0.85rem",
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(32,38,59,0.06), 0 1px 3px rgba(32,38,59,0.08)",
-        raised: "0 4px 14px rgba(32,38,59,0.12)",
+        soft: "0 1px 2px rgb(var(--ombre) / 0.06), 0 1px 3px rgb(var(--ombre) / 0.08)",
+        raised: "0 4px 14px rgb(var(--ombre) / 0.12)",
       },
       keyframes: {
         "pop": {
@@ -38,6 +44,13 @@ const config: Config = {
         "fade-in": {
           "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "confetti": {
+          "0%": { opacity: "1", transform: "translate(0, 0) rotate(0deg) scale(1)" },
+          "100%": {
+            opacity: "0",
+            transform: "translate(var(--cx), var(--cy)) rotate(var(--cr)) scale(0.4)",
+          },
         },
       },
       animation: {

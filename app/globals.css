@@ -2,9 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --c-paper: 239 240 228;
+  --c-surface: 255 255 255;
+  --c-ink: 32 38 59;
+  --c-contrast: 32 38 59;
+  --c-marigold: 227 162 60;
+  --c-tag: 193 67 42;
+  --c-teal: 47 110 100;
+  --ombre: 32 38 59;
+}
+
+.dark {
+  --c-paper: 18 20 25;
+  --c-surface: 30 33 40;
+  /* `ink` porte le texte : il s'inverse. Les fonds pleins qui s'appuyaient
+     dessus utilisent `contrast`, qui reste sombre dans les deux thèmes pour
+     garder du texte blanc lisible. */
+  --c-ink: 233 234 227;
+  --c-contrast: 58 65 80;
+  --c-marigold: 233 172 78;
+  --c-tag: 219 102 78;
+  --c-teal: 61 133 119;
+  --ombre: 0 0 0;
+}
+
 body {
-  background-color: #EFF0E4;
-  color: #20263B;
+  background-color: rgb(var(--c-paper));
+  color: rgb(var(--c-ink));
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -25,8 +50,22 @@ body {
   }
 
   *:focus-visible {
-    outline: 2px solid #2F6E64;
+    outline: 2px solid rgb(var(--c-teal));
     outline-offset: 2px;
+  }
+
+  /* Sans fond explicite, les champs gardent le blanc par défaut du navigateur
+     et deviennent des rectangles éblouissants en thème sombre. */
+  input,
+  textarea,
+  select {
+    background-color: rgb(var(--c-surface));
+    color: rgb(var(--c-ink));
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: rgb(var(--c-teal));
   }
 }
 
@@ -89,9 +128,9 @@ body {
   .skeleton {
     background-image: linear-gradient(
       90deg,
-      rgba(32, 38, 59, 0.08) 0px,
-      rgba(32, 38, 59, 0.15) 40px,
-      rgba(32, 38, 59, 0.08) 80px
+      rgb(var(--c-ink) / 0.08) 0px,
+      rgb(var(--c-ink) / 0.15) 40px,
+      rgb(var(--c-ink) / 0.08) 80px
     );
     background-size: 800px 100%;
   }

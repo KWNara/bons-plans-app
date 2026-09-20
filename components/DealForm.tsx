@@ -319,7 +319,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
   if (citiesLoading) {
     return (
-      <div className="w-full max-w-sm bg-white rounded-card shadow-soft border border-ink/10 p-5 space-y-3">
+      <div className="w-full max-w-sm bg-surface rounded-card shadow-soft border border-ink/10 p-5 space-y-3">
         <Skeleton className="h-11 w-full rounded-control" />
         <Skeleton className="h-24 w-full rounded-control" />
         <Skeleton className="h-11 w-full rounded-control" />
@@ -339,7 +339,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
   if (merchantCities.length === 0) {
     return (
-      <div className="bg-white rounded-card shadow-soft border border-ink/10 p-6 text-center">
+      <div className="bg-surface rounded-card shadow-soft border border-ink/10 p-6 text-center">
         <p className="text-ink/70 text-sm">
           Tu dois d&apos;abord ajouter au moins une ville de diffusion depuis{" "}
           <Link href="/compte" className="text-teal underline font-medium">
@@ -354,7 +354,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
   const allPhotos = [...existingPhotos, ...photoPreviews];
 
   return (
-    <div className="w-full max-w-sm bg-white rounded-card shadow-soft border border-ink/10 p-5">
+    <div className="w-full max-w-sm bg-surface rounded-card shadow-soft border border-ink/10 p-5">
       <FormInput label="Titre" type="text" value={titre} onChange={(e) => setTitre(e.target.value)} />
 
       <FormTextarea
@@ -485,7 +485,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
                 key={mc.city_id}
                 onClick={() => toggleCity(mc.city_id)}
                 className={`press rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  active ? "bg-ink text-white border-ink" : "bg-white text-ink/70 border-ink/15"
+                  active ? "bg-contrast text-white border-contrast" : "bg-surface text-ink/70 border-ink/15"
                 }`}
               >
                 {mc.cities?.nom} ({mc.cities?.code_postal})

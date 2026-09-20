@@ -254,7 +254,7 @@ export default function AdminSignalementsPage() {
       <div className="max-w-2xl mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au fil"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -276,7 +276,7 @@ export default function AdminSignalementsPage() {
           <button
             onClick={() => setShowAll((v) => !v)}
             className={`press rounded-control border px-3.5 py-2.5 text-sm font-medium transition-colors ${
-              showAll ? "border-teal bg-teal/10 text-teal" : "border-ink/15 text-ink/70 hover:bg-white"
+              showAll ? "border-teal bg-teal/10 text-teal" : "border-ink/15 text-ink/70 hover:bg-surface"
             }`}
           >
             {showAll ? "Tous les signalements" : "En attente uniquement"}
@@ -288,7 +288,7 @@ export default function AdminSignalementsPage() {
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
               aria-label="Trier les signalements"
-              className="rounded-control border border-ink/15 px-3 py-2.5 text-sm bg-white focus:border-teal transition-colors"
+              className="rounded-control border border-ink/15 px-3 py-2.5 text-sm bg-surface focus:border-teal transition-colors"
             >
               <option value="date">Trier par date</option>
               <option value="motif">Trier par motif</option>
@@ -315,7 +315,7 @@ export default function AdminSignalementsPage() {
               const occupe = busyId === r.id;
 
               return (
-                <li key={r.id} className="bg-white rounded-card shadow-soft border border-ink/10 p-4">
+                <li key={r.id} className="bg-surface rounded-card shadow-soft border border-ink/10 p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <span className="text-xs font-semibold uppercase tracking-wide text-teal">
                       {r.target_type === "deal"

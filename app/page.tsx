@@ -285,8 +285,8 @@ export default function Home() {
               onClick={() => setCategoryId(null)}
               className={`press whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                 categoryId === null
-                  ? "bg-ink text-white border-ink"
-                  : "bg-white text-ink/70 border-ink/10 hover:border-ink/25"
+                  ? "bg-contrast text-white border-contrast"
+                  : "bg-surface text-ink/70 border-ink/10 hover:border-ink/25"
               }`}
             >
               Tout
@@ -297,14 +297,14 @@ export default function Home() {
                 onClick={() => setCategoryId(c.id)}
                 className={`press flex items-center gap-1.5 whitespace-nowrap pl-1.5 pr-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                   categoryId === c.id
-                    ? "bg-ink text-white border-ink"
-                    : "bg-white text-ink/70 border-ink/10 hover:border-ink/25"
+                    ? "bg-contrast text-white border-contrast"
+                    : "bg-surface text-ink/70 border-ink/10 hover:border-ink/25"
                 }`}
               >
                 <CategoryIcon
                   icone={c.icone}
                   size={11}
-                  className={`w-5 h-5 ${categoryId === c.id ? "!bg-white/20 [&_svg]:!text-white" : ""}`}
+                  className={`w-5 h-5 ${categoryId === c.id ? "!bg-surface/20 [&_svg]:!text-white" : ""}`}
                 />
                 {c.nom}
               </button>
@@ -315,7 +315,7 @@ export default function Home() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              className="rounded-control border border-ink/15 px-3 py-1.5 text-sm bg-white text-ink font-medium"
+              className="rounded-control border border-ink/15 px-3 py-1.5 text-sm bg-surface text-ink font-medium"
             >
               <option value="recent">Plus récents</option>
               <option value="popularite">Popularité</option>

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { Confetti } from "@/components/ui/Confetti";
 
 type Props = {
   merchantId: string;
@@ -14,6 +16,8 @@ export function FollowMerchantButton({ merchantId, userId }: Props) {
   const [following, setFollowing] = useState<boolean | null>(null);
   const [followId, setFollowId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [feteQuoi, setFeteQuoi] = useState(false);
+  const [erreur, setErreur] = useState(false);
 
   useEffect(() => {
     if (!userId) {
@@ -38,35 +42,58 @@ export function FollowMerchantButton({ merchantId, userId }: Props) {
       return;
     }
     if (busy || following === null) return;
+
     setBusy(true);
+    setErreur(false);
 
     if (following) {
-      await supabase.from("follows").delete().eq("id", followId!);
-      setFollowing(false);
-      setFollowId(null);
+      const { error } = await supabase.from("follows").delete().eq("id", followId!);
+      if (error) {
+        setErreur(true);
+      } else {
+        setFollowing(false);
+        setFollowId(null);
+      }
     } else {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("follows")
         .insert({ follower_id: userId, followed_merchant_id: merchantId })
         .select("id")
         .single();
-      setFollowing(true);
-      setFollowId(data?.id ?? null);
+
+      if (error) {
+        setErreur(true);
+      } else {
+        setFollowing(true);
+        setFollowId(data?.id ?? null);
+        setFeteQuoi(true);
+      }
     }
+
     setBusy(false);
   }
 
   return (
-    <button
-      onClick={toggle}
-      disabled={following === null || busy}
-      className={`press rounded-full font-semibold px-4 py-1.5 text-sm shadow-soft disabled:opacity-50 ${
-        following
-          ? "border border-ink/15 bg-white text-ink"
-          : "bg-teal text-white"
-      }`}
-    >
-      {following ? "Suivi ✓" : "Suivre"}
-    </button>
+    <div className="relative inline-flex flex-col items-center">
+      {feteQuoi && <Confetti onDone={() => setFeteQuoi(false)} />}
+
+      <button
+        onClick={toggle}
+        disabled={following === null || busy}
+        aria-pressed={following === true}
+        className={`press inline-flex items-center gap-1.5 rounded-full font-semibold px-4 py-2 text-sm shadow-soft disabled:opacity-50 ${
+          following ? "border border-ink/15 bg-surface text-ink" : "bg-teal text-white"
+        }`}
+      >
+        {following ? <Check size={15} /> : <Plus size={15} />}
+        {following ? "Suivi" : "Suivre"}
+      </button>
+
+      {erreur && (
+        <span className="absolute top-full mt-1 text-xs text-tag whitespace-nowrap">
+          Action impossible
+        </span>
+      )}
+    </div>
   );
 }

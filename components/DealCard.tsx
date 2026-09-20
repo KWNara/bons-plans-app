@@ -45,7 +45,7 @@ export function DealCard({
   const badge = discountLabel(deal);
 
   return (
-    <article className="group bg-white rounded-card overflow-hidden shadow-soft border border-ink/5 h-full transition-shadow duration-200 hover:shadow-raised">
+    <article className="group bg-surface rounded-card overflow-hidden shadow-soft border border-ink/5 h-full transition-shadow duration-200 hover:shadow-raised">
       <div className="relative">
         <Link href={`/bons-plans/${deal.id}`} className="block">
           {deal.photos[0] ? (
@@ -70,7 +70,7 @@ export function DealCard({
           userId={userId}
           initialFavorited={favorited}
           onToggled={(active) => onInteraction?.("favorite", active)}
-          className="absolute top-3 right-3 bg-white/90 backdrop-blur p-2.5 rounded-full shadow-soft hover:bg-white"
+          className="absolute top-3 right-3 bg-surface/90 backdrop-blur p-2.5 rounded-full shadow-soft hover:bg-surface"
         />
       </div>
 

@@ -126,7 +126,7 @@ export default function CommercantVitrinePage() {
       <Link
         key={deal.id}
         href={`/bons-plans/${deal.id}`}
-        className={`press flex items-center gap-3 rounded-card border border-ink/10 bg-white p-3 shadow-soft hover:shadow-raised transition-shadow ${muted ? "opacity-60" : ""}`}
+        className={`press flex items-center gap-3 rounded-card border border-ink/10 bg-surface p-3 shadow-soft hover:shadow-raised transition-shadow ${muted ? "opacity-60" : ""}`}
       >
         {deal.photos[0] ? (
           <img src={deal.photos[0]} alt={deal.titre} className="w-16 h-16 rounded-control object-cover shrink-0" />
@@ -149,7 +149,7 @@ export default function CommercantVitrinePage() {
         <Link
           href="/"
           aria-label="Retour au fil"
-          className="press absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-soft"
+          className="press absolute top-4 left-4 w-9 h-9 rounded-full bg-surface/90 backdrop-blur flex items-center justify-center shadow-soft"
         >
           <ChevronLeft size={19} className="text-ink" />
         </Link>
@@ -162,7 +162,7 @@ export default function CommercantVitrinePage() {
               className="w-20 h-20 rounded-full object-cover border-4 border-paper shadow-soft"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-white border-4 border-paper shadow-soft flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-surface border-4 border-paper shadow-soft flex items-center justify-center">
               <Store size={26} className="text-teal" strokeWidth={1.75} />
             </div>
           )}

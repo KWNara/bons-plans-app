@@ -25,7 +25,7 @@ export function LegalShell({
       <div className="max-w-2xl mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -43,7 +43,7 @@ export function LegalShell({
           <p className="text-xs text-ink/70 leading-relaxed">{intro}</p>
         </div>
 
-        <div className="bg-white rounded-card shadow-soft border border-ink/10 p-5 sm:p-7">
+        <div className="bg-surface rounded-card shadow-soft border border-ink/10 p-5 sm:p-7">
           <div className="legal-content">{children}</div>
         </div>
       </div>

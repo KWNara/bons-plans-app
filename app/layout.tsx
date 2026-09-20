@@ -63,7 +63,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={bodyFont.variable}>
+    <html lang="fr" className={bodyFont.variable} suppressHydrationWarning>
+      <head>
+        {/* Appliqué avant le premier rendu : sans ça, une page sombre
+            s'afficherait une fraction de seconde en clair au chargement. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('deniche:theme');if(t==='sombre'||((!t||t==='systeme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>
         <CityProvider>{children}</CityProvider>
         <Footer />

@@ -160,7 +160,7 @@ function MonAbonnementContent() {
       <div className="max-w-md mx-auto">
         <Link
           href="/compte"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au compte"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -199,7 +199,7 @@ function MonAbonnementContent() {
 
             <div
               className={`rounded-card p-5 mb-4 shadow-soft ${
-                isPro ? "bg-gradient-to-br from-ink to-ink/80 text-white" : "bg-white border border-ink/10"
+                isPro ? "bg-gradient-to-br from-contrast to-contrast/80 text-white" : "bg-surface border border-ink/10"
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -245,7 +245,7 @@ function MonAbonnementContent() {
               <button
                 onClick={handlePortal}
                 disabled={portalLoading}
-                className="press w-full flex items-center justify-center gap-2 rounded-control border border-ink/15 bg-white text-ink py-3 font-semibold shadow-soft disabled:opacity-50"
+                className="press w-full flex items-center justify-center gap-2 rounded-control border border-ink/15 bg-surface text-ink py-3 font-semibold shadow-soft disabled:opacity-50"
               >
                 {portalLoading ? <Spinner size={16} /> : <CreditCard size={16} />}
                 {portalLoading ? "Ouverture…" : "Gérer / annuler mon abonnement"}

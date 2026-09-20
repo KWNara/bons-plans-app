@@ -17,7 +17,7 @@ export function AuthShell({
           <LogoLockup size={36} textClassName="text-ink text-lg" />
         </Link>
 
-        <div className="bg-white rounded-card shadow-soft border border-ink/10 p-6 animate-fade-in">
+        <div className="bg-surface rounded-card shadow-soft border border-ink/10 p-6 animate-fade-in">
           <h1 className="text-xl font-extrabold text-ink mb-1">{title}</h1>
           {subtitle && <p className="text-sm text-ink/60 mb-6">{subtitle}</p>}
           {!subtitle && <div className="mb-4" />}

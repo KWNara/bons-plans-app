@@ -27,7 +27,7 @@ export function FormSelect({ label, className, children, ...props }: SelectProps
   return (
     <label className="block mb-3.5">
       <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">{label}</span>
-      <select className={`${fieldClass} bg-white ${className ?? ""}`} {...props}>
+      <select className={`${fieldClass} bg-surface ${className ?? ""}`} {...props}>
         {children}
       </select>
     </label>

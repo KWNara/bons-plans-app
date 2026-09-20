@@ -9,6 +9,7 @@ import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Profile = {
   pseudo: string;
@@ -44,7 +45,7 @@ type DealSummary = {
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-card border border-ink/10 bg-white shadow-soft p-4 mb-4 ${className}`}>
+    <div className={`rounded-card border border-ink/10 bg-surface shadow-soft p-4 mb-4 ${className}`}>
       {children}
     </div>
   );
@@ -272,7 +273,7 @@ export default function ComptePage() {
       <div className="max-w-md mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au fil"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -293,7 +294,7 @@ export default function ComptePage() {
                 </div>
               )}
               {editingProfile && (
-                <label className="press absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-ink text-white flex items-center justify-center cursor-pointer shadow-soft">
+                <label className="press absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-contrast text-white flex items-center justify-center cursor-pointer shadow-soft">
                   <Camera size={12} />
                   <input
                     type="file"
@@ -312,7 +313,7 @@ export default function ComptePage() {
                   profile?.role === "commercant"
                     ? "bg-teal/10 text-teal"
                     : profile?.role === "admin"
-                      ? "bg-ink text-white"
+                      ? "bg-contrast text-white"
                       : "bg-ink/10 text-ink/60"
                 }`}
               >
@@ -393,7 +394,7 @@ export default function ComptePage() {
           {profile?.role === "admin" && (
             <Link
               href="/admin/signalements"
-              className="press block text-center w-full rounded-control bg-ink text-white py-2.5 font-medium mt-4"
+              className="press block text-center w-full rounded-control bg-contrast text-white py-2.5 font-medium mt-4"
             >
               Back-office admin
             </Link>
@@ -513,6 +514,11 @@ export default function ComptePage() {
             Devenir commerçant
           </Link>
         )}
+
+        <Card>
+          <CardLabel>Apparence</CardLabel>
+          <ThemeToggle />
+        </Card>
 
         <button
           onClick={handleSignOut}

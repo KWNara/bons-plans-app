@@ -108,7 +108,7 @@ export default function ModifierBonPlanPage() {
       <div className="max-w-sm mx-auto">
         <Link
           href="/mes-bons-plans"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour"
         >
           <ChevronLeft size={20} className="text-ink" />

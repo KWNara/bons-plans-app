@@ -174,7 +174,7 @@ export default function AlertesPage() {
       <div className="max-w-sm mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au fil"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -187,7 +187,7 @@ export default function AlertesPage() {
 
         <form
           onSubmit={handleCreate}
-          className="bg-white rounded-card shadow-soft border border-ink/10 p-4 mb-6"
+          className="bg-surface rounded-card shadow-soft border border-ink/10 p-4 mb-6"
         >
           <div className="mb-3.5">
             <CitySearchInput onSelect={handleCitySelect} label="Ville" placeholder="Rechercher une ville" />
@@ -250,7 +250,7 @@ export default function AlertesPage() {
         ) : (
           <ul className="space-y-2.5">
             {rules.map((r) => (
-              <li key={r.id} className="bg-white rounded-card shadow-soft border border-ink/10 p-3.5">
+              <li key={r.id} className="bg-surface rounded-card shadow-soft border border-ink/10 p-3.5">
                 <div className="flex items-start justify-between gap-3 mb-2.5">
                   <div className="min-w-0">
                     <p className="font-semibold text-ink break-words">

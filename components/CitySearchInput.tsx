@@ -80,7 +80,7 @@ export function CitySearchInput({ onSelect, placeholder, label }: Props) {
       )}
 
       {suggestions.length > 0 && (
-        <ul className="absolute z-10 w-full bg-white border border-ink/10 rounded-control mt-1 shadow-raised max-h-60 overflow-auto">
+        <ul className="absolute z-10 w-full bg-surface border border-ink/10 rounded-control mt-1 shadow-raised max-h-60 overflow-auto">
           {suggestions.map((s) => (
             <li key={s.code_insee}>
               <button

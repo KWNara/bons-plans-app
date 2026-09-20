@@ -123,7 +123,7 @@ export function CommentSection({
           </button>
         </form>
       ) : (
-        <p className="text-sm mb-5 rounded-control bg-white border border-ink/10 px-3.5 py-2.5">
+        <p className="text-sm mb-5 rounded-control bg-surface border border-ink/10 px-3.5 py-2.5">
           <a href="/connexion" className="text-teal underline font-medium">
             Connecte-toi
           </a>{" "}

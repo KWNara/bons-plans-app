@@ -86,7 +86,7 @@ export default function NotificationsPage() {
       <div className="max-w-md mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au fil"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
               const inner = (
                 <div
                   className={`flex items-start gap-3 rounded-card border p-3.5 shadow-soft ${
-                    n.is_read ? "border-ink/10 bg-white" : "border-teal/30 bg-teal/5"
+                    n.is_read ? "border-ink/10 bg-surface" : "border-teal/30 bg-teal/5"
                   }`}
                 >
                   <span className="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center shrink-0">

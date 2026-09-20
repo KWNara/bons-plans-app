@@ -154,8 +154,8 @@ export function ReportButton({ targetType, targetId, userId, className, iconOnly
                         onClick={() => setMotif(m.value)}
                         className={`press rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                           motif === m.value
-                            ? "bg-ink text-white border-ink"
-                            : "bg-white text-ink/70 border-ink/15"
+                            ? "bg-contrast text-white border-contrast"
+                            : "bg-surface text-ink/70 border-ink/15"
                         }`}
                       >
                         {m.label}

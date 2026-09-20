@@ -73,7 +73,7 @@ export default function TarifsPage() {
       <div className="max-w-2xl mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -85,7 +85,7 @@ export default function TarifsPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div className="rounded-card border border-ink/10 bg-white p-6 flex flex-col">
+          <div className="rounded-card border border-ink/10 bg-surface p-6 flex flex-col">
             <h2 className="text-lg font-bold text-ink mb-1">Gratuit</h2>
             <p className="text-3xl font-extrabold text-ink mb-5">
               0 € <span className="text-sm font-normal text-ink/60">/mois</span>
@@ -107,7 +107,7 @@ export default function TarifsPage() {
             )}
           </div>
 
-          <div className="relative rounded-card border-2 border-marigold bg-white p-6 flex flex-col shadow-raised">
+          <div className="relative rounded-card border-2 border-marigold bg-surface p-6 flex flex-col shadow-raised">
             <span className="absolute -top-3 left-6 bg-marigold text-ink text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
               <Sparkles size={11} /> Recommandé
             </span>

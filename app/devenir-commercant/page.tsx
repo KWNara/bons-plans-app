@@ -136,13 +136,13 @@ export default function DevenirCommercantPage() {
       <div className="max-w-sm mx-auto">
         <Link
           href="/compte"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour"
         >
           <ChevronLeft size={20} className="text-ink" />
         </Link>
 
-        <div className="bg-white rounded-card shadow-soft border border-ink/10 p-6">
+        <div className="bg-surface rounded-card shadow-soft border border-ink/10 p-6">
           <div className="w-12 h-12 rounded-full bg-teal/10 flex items-center justify-center mb-3">
             <Store size={22} className="text-teal" strokeWidth={1.75} />
           </div>
@@ -162,7 +162,7 @@ export default function DevenirCommercantPage() {
                     <Store size={18} className="text-ink/30" />
                   </div>
                 )}
-                <label className="press absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center cursor-pointer">
+                <label className="press absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-contrast text-white flex items-center justify-center cursor-pointer">
                   <Camera size={10} />
                   <input
                     type="file"

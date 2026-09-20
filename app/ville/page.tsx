@@ -126,7 +126,7 @@ export default function VillePage() {
       <div className="max-w-sm mx-auto">
         <Link
           href="/"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au fil"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -134,7 +134,7 @@ export default function VillePage() {
 
         <h1 className="text-2xl font-extrabold text-ink mb-5">Choisir une ville</h1>
 
-        <div className="bg-white rounded-card shadow-soft border border-ink/10 p-4 mb-4">
+        <div className="bg-surface rounded-card shadow-soft border border-ink/10 p-4 mb-4">
           <CitySearchInput onSelect={applySuggestion} label="Rechercher" />
 
           <button
@@ -189,7 +189,7 @@ export default function VillePage() {
               {followed.map((f) => (
                 <li
                   key={f.id}
-                  className="flex items-center justify-between gap-2 bg-white rounded-card shadow-soft border border-ink/10 pl-3.5 pr-2 py-1"
+                  className="flex items-center justify-between gap-2 bg-surface rounded-card shadow-soft border border-ink/10 pl-3.5 pr-2 py-1"
                 >
                   <button
                     type="button"

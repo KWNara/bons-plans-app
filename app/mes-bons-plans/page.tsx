@@ -120,7 +120,7 @@ export default function MesBonsPlansPage() {
       <div className="max-w-md mx-auto">
         <Link
           href="/compte"
-          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-white"
+          className="press inline-flex items-center justify-center w-9 h-9 -ml-1.5 mb-3 rounded-full hover:bg-surface"
           aria-label="Retour au compte"
         >
           <ChevronLeft size={20} className="text-ink" />
@@ -191,7 +191,7 @@ export default function MesBonsPlansPage() {
                     return (
                       <li
                         key={deal.id}
-                        className="bg-white rounded-card shadow-soft border border-ink/10 p-3.5"
+                        className="bg-surface rounded-card shadow-soft border border-ink/10 p-3.5"
                       >
                         <div className="flex items-start justify-between gap-3 mb-2.5">
                           <p className="font-semibold text-ink leading-snug min-w-0 break-words">
