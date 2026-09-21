@@ -1,7 +1,7 @@
 -- Abonnements aux notifications push (Web Push / VAPID).
 --
 -- Une ligne par navigateur, pas par utilisateur : quelqu'un qui consulte
--- Déniche sur son téléphone et sur son ordinateur a deux abonnements distincts,
+-- Chiner sur son téléphone et sur son ordinateur a deux abonnements distincts,
 -- et révoquer l'un ne doit pas couper l'autre.
 
 create table push_subscriptions (
@@ -78,7 +78,7 @@ begin
     when 'ami_accepte' then coalesce(pseudo, 'Quelqu''un') || ' a accepté ta demande'
     when 'ami_participe' then coalesce(pseudo, 'Quelqu''un') || ' y va aussi'
     when 'mention' then coalesce(pseudo, 'Quelqu''un') || ' t''a cité'
-    else 'Déniche'
+    else 'Chiner'
   end;
 
   perform net.http_post(

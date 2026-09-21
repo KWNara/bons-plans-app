@@ -53,7 +53,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/10 mt-8 pt-5">
-          <p className="text-xs text-white/60">© {year} Déniche. Tous droits réservés.</p>
+          <p className="text-xs text-white/60">© {year} Chiner. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

@@ -1,9 +1,9 @@
 // Le nom porte une version : le gestionnaire « activate » supprime tout cache
 // dont la clé diffère, donc l'incrémenter est ce qui purge l'ancien contenu.
-// Sans cette incrémentation au renommage de l'application, la page hors-ligne
-// mise en cache continuait d'afficher « Bons Plans » chez qui l'avait installée
-// avant — indéfiniment.
-const CACHE_NAME = "deniche-shell-v2";
+// Sans cette incrémentation à chaque renommage, la page hors-ligne mise en
+// cache continue d'afficher l'ancien nom chez qui avait déjà installé
+// l'application — indéfiniment.
+const CACHE_NAME = "chiner-shell-v1";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -45,17 +45,17 @@ self.addEventListener("push", (event) => {
   try {
     donnees = event.data ? event.data.json() : {};
   } catch {
-    donnees = { titre: "Déniche", corps: event.data ? event.data.text() : "" };
+    donnees = { titre: "Chiner", corps: event.data ? event.data.text() : "" };
   }
 
-  const titre = donnees.titre || "Déniche";
+  const titre = donnees.titre || "Chiner";
 
   event.waitUntil(
     self.registration.showNotification(titre, {
       body: donnees.corps || "",
       // Les icônes vivent sous /icons/ (cf. public/manifest.json) : à la racine
       // elles renvoient 404 et la notification s'affiche avec l'icône par
-      // défaut du navigateur, sans rien qui rappelle Déniche.
+      // défaut du navigateur, sans rien qui rappelle Chiner.
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       // Le tag regroupe les notifications d'une même conversation : dix

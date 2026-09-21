@@ -202,7 +202,7 @@ export default function ProfilPage() {
               <MapPin size={14} /> {profil.cities.nom}
             </span>
           )}
-          {profil && <span>Sur Déniche depuis {moisEtAnnee(profil.created_at)}</span>}
+          {profil && <span>Sur Chiner depuis {moisEtAnnee(profil.created_at)}</span>}
         </div>
 
         {profil?.bio && (

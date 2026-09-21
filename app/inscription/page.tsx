@@ -130,7 +130,7 @@ function FormulaireInscription() {
             {/* Tournure sans genre : on ne sait rien de la personne qui invite.
                 Et c'est bien le filleul qui demande — poser la demande au nom
                 du parrain ouvrait une faille (cf. 20260922010000). */}
-            <strong className="font-semibold">{parrain.pseudo}</strong> t&apos;invite sur Déniche.
+            <strong className="font-semibold">{parrain.pseudo}</strong> t&apos;invite sur Chiner.
             Une demande d&apos;ami lui sera envoyée dès ton inscription.
           </span>
         </p>

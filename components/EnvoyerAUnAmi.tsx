@@ -146,7 +146,7 @@ export function EnvoyerAUnAmi({ dealId, userId }: Props) {
                   <Users size={20} className="text-teal" />
                 </span>
                 <p className="text-sm text-ink/70 mb-4">
-                  Tu n&apos;as pas encore d&apos;amis sur Déniche.
+                  Tu n&apos;as pas encore d&apos;amis sur Chiner.
                 </p>
                 <Link
                   href="/amis"

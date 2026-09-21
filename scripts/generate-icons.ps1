@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Drawing
 
-# Le mark de Déniche : un nid (trois brins) avec la trouvaille dorée au centre.
+# Le mark de Chiner : un nid (trois brins) avec la trouvaille dorée au centre.
 # Les coordonnées sont celles du SVG source (repère 56x56), remises à l'échelle.
 
 function Add-QuadCurve {
@@ -26,8 +26,8 @@ function New-BrandIcon {
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 
   $teal = [System.Drawing.Color]::FromArgb(255, 47, 110, 100)
-  $paper = [System.Drawing.Color]::FromArgb(255, 239, 240, 228)
-  $marigold = [System.Drawing.Color]::FromArgb(255, 227, 162, 60)
+  $paper = [System.Drawing.Color]::FromArgb(255, 245, 239, 221)
+  $marigold = [System.Drawing.Color]::FromArgb(255, 232, 185, 78)
 
   $g.Clear($teal)
 
@@ -70,4 +70,4 @@ New-BrandIcon -Size 512 -OutPath "$root\icons\icon-512.png"
 New-BrandIcon -Size 512 -OutPath "$root\icons\icon-maskable-512.png" -MarkScale 0.72
 New-BrandIcon -Size 180 -OutPath "$root\apple-touch-icon.png"
 
-Write-Output "Icones Deniche generees."
+Write-Output "Icones Chiner generees."

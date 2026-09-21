@@ -2,7 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import { LegalShell, Fill } from "@/components/ui/LegalContent";
 
 export const metadata = {
-  title: "Politique de confidentialité — Déniche",
+  title: "Politique de confidentialité — Chiner",
 };
 
 export default function ConfidentialitePage() {
@@ -87,7 +87,7 @@ export default function ConfidentialitePage() {
       <h3>Destinataires des données</h3>
       <ul>
         <li>
-          Déniche (accès interne limité aux besoins de modération/support)
+          Chiner (accès interne limité aux besoins de modération/support)
         </li>
         <li>
           Supabase (hébergement base de données, Union Européenne ou clause de transfert adaptée — à vérifier

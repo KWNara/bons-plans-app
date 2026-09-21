@@ -29,7 +29,7 @@ function Cadre({ children, className = "", size = 96 }: Props & { children: Reac
 const TRAIT = "stroke-ink/25";
 const TRAIT_PALE = "stroke-ink/10";
 
-/** Le panier de Déniche, encore vide. Pour « aucun bon plan ici ». */
+/** Le panier de Chiner, encore vide. Pour « aucun bon plan ici ». */
 export function PanierVide(props: Props) {
   return (
     <Cadre {...props}>

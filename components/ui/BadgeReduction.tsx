@@ -3,7 +3,7 @@
 // L'ancienne version était un drapeau plein qui s'appuyait sur le bord de la
 // photo : lisible, mais interchangeable avec n'importe quelle application de
 // promotions. Un tampon posé de travers, à l'encre rouge sur fond papier,
-// raconte quelque chose de plus juste pour Déniche — la trouvaille estampillée.
+// raconte quelque chose de plus juste pour Chiner — la trouvaille estampillée.
 //
 // Le double filet (bordure + anneau intérieur) est ce qui fait lire « tampon »
 // plutôt que « cadre » ; l'inclinaison légère fait le reste.

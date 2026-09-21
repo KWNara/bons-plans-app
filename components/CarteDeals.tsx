@@ -28,13 +28,13 @@ type Props = {
 // Leaflet cherche ses images de marqueur sur un chemin relatif à la feuille de
 // style, ce qui ne survit pas au découpage des paquets de Next.js : le repère
 // par défaut apparaît en carré cassé. On dessine donc le nôtre en SVG, aux
-// couleurs de Déniche, ce qui évite en prime trois requêtes par marqueur.
+// couleurs de Chiner, ce qui évite en prime trois requêtes par marqueur.
 const ICONE = L.divIcon({
   className: "",
   html: `<svg width="30" height="38" viewBox="0 0 30 38" xmlns="http://www.w3.org/2000/svg">
     <path d="M15 37C15 37 28 22.5 28 14C28 6.8 22.2 1 15 1S2 6.8 2 14C2 22.5 15 37 15 37Z"
-          fill="#2F6E64" stroke="#EFF0E4" stroke-width="2"/>
-    <circle cx="15" cy="14" r="5" fill="#E3A23C"/>
+          fill="#2F6E64" stroke="#F5EFDD" stroke-width="2"/>
+    <circle cx="15" cy="14" r="5" fill="#E8B94E"/>
   </svg>`,
   iconSize: [30, 38],
   iconAnchor: [15, 37],

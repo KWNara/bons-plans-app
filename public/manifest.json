@@ -1,13 +1,13 @@
 {
-  "name": "Déniche",
-  "short_name": "Déniche",
+  "name": "Chiner",
+  "short_name": "Chiner",
   "description": "Les bons plans des commerçants de ta ville, en temps réel.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#EFF0E4",
-  "theme_color": "#20263B",
+  "background_color": "#F5EFDD",
+  "theme_color": "#1B2340",
   "orientation": "portrait",
   "lang": "fr",
   "icons": [

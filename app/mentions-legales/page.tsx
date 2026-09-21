@@ -2,7 +2,7 @@ import { Scale } from "lucide-react";
 import { LegalShell, Fill } from "@/components/ui/LegalContent";
 
 export const metadata = {
-  title: "Mentions légales — Déniche",
+  title: "Mentions légales — Chiner",
 };
 
 export default function MentionsLegalesPage() {
@@ -14,7 +14,7 @@ export default function MentionsLegalesPage() {
     >
       <h3>Éditeur du site</h3>
       <p>
-        Le site Déniche est édité par :
+        Le site Chiner est édité par :
       </p>
       <ul>
         <li>
@@ -56,7 +56,7 @@ export default function MentionsLegalesPage() {
       <h3>Propriété intellectuelle</h3>
       <p>
         L&apos;ensemble des éléments du site (textes, logo, charte graphique, code) est la propriété de{" "}
-        Déniche (<Fill>[RAISON SOCIALE]</Fill>), sauf mention contraire. Toute reproduction
+        Chiner (<Fill>[RAISON SOCIALE]</Fill>), sauf mention contraire. Toute reproduction
         sans autorisation est interdite.
       </p>
 

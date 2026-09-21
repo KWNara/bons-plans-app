@@ -174,7 +174,7 @@ export function ActiverNotifications({ userId }: Props) {
           <p className="text-sm font-semibold text-ink">Notifications sur cet appareil</p>
           <p className="text-sm text-ink/70">
             {etat === "actif"
-              ? "Tu seras prévenu même quand Déniche est fermé."
+              ? "Tu seras prévenu même quand Chiner est fermé."
               : etat === "refuse"
                 ? "Tu les as refusées : réactive-les dans les réglages de ton navigateur."
                 : "Sois prévenu d'un message ou d'une offre flash."}

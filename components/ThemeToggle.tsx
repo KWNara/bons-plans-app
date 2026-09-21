@@ -5,7 +5,7 @@ import { Moon, Sun, Monitor } from "lucide-react";
 
 type Theme = "clair" | "sombre" | "systeme";
 
-export const THEME_STORAGE_KEY = "deniche:theme";
+export const THEME_STORAGE_KEY = "chiner:theme";
 
 const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: "clair", label: "Clair", icon: Sun },

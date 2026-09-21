@@ -11,7 +11,7 @@ $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
 $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 
 $teal = [System.Drawing.Color]::FromArgb(255, 47, 110, 100)
-$marigold = [System.Drawing.Color]::FromArgb(255, 227, 162, 60)
+$marigold = [System.Drawing.Color]::FromArgb(255, 232, 185, 78)
 $white = [System.Drawing.Color]::White
 
 $g.Clear($teal)
@@ -20,11 +20,11 @@ $g.Clear($teal)
 $bigR = 420
 $bigX = $width - 260
 $bigY = $height - 300
-$bigBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(28, 239, 240, 228))
+$bigBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(28, 245, 239, 221))
 $g.FillEllipse($bigBrush, $bigX, $bigY, $bigR, $bigR)
 $bigBrush.Dispose()
 
-# badge circle portant le mark de Déniche (le panier et sa trouvaille)
+# badge circle portant le mark de Chiner (le panier et sa trouvaille)
 $badgeSize = 220
 $badgeX = 110
 $badgeY = [int](($height - $badgeSize) / 2)
@@ -73,7 +73,7 @@ $titleFormat = New-Object System.Drawing.StringFormat
 $titleFormat.Alignment = [System.Drawing.StringAlignment]::Near
 $titleFormat.LineAlignment = [System.Drawing.StringAlignment]::Center
 $titleRect = New-Object System.Drawing.RectangleF($textX, $titleY, $textW, 110)
-$marque = "D" + [char]0x00E9 + "niche"
+$marque = "Chiner"
 $g.DrawString($marque, $titleFont, $titleBrush, $titleRect, $titleFormat)
 $titleFont.Dispose()
 $titleBrush.Dispose()

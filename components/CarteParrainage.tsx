@@ -41,14 +41,14 @@ export function CarteParrainage({ userId }: Props) {
   }, [userId]);
 
   async function partager() {
-    const texte = "Rejoins-moi sur Déniche, les bons plans de notre ville.";
+    const texte = "Rejoins-moi sur Chiner, les bons plans de notre ville.";
 
     // L'API de partage n'existe pas sur tous les navigateurs de bureau, et un
     // utilisateur peut annuler la feuille de partage : dans les deux cas on
     // retombe sur le presse-papiers plutôt que de ne rien faire.
     if (partageNatif) {
       try {
-        await navigator.share({ title: "Déniche", text: texte, url: lien });
+        await navigator.share({ title: "Chiner", text: texte, url: lien });
         return;
       } catch {
         // Partage annulé ou refusé : on enchaîne sur la copie.

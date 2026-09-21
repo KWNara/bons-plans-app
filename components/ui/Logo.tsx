@@ -1,6 +1,6 @@
-// Le symbole de Déniche : un nid (trois brins entrelacés) avec la trouvaille
-// au centre. « Dénicher », littéralement, c'est trouver le nid — le mark
-// raconte donc le nom plutôt que d'illustrer génériquement une étiquette.
+// Le symbole de Chiner : un nid (trois brins entrelacés) avec la trouvaille au
+// centre. Il n'a pas eu besoin de changer avec le nom — fouiller un panier
+// pour en sortir la bonne pièce, c'est exactement ce que « chiner » désigne.
 export function LogoMark({ size = 36, className = "" }: { size?: number; className?: string }) {
   return (
     <span
@@ -11,13 +11,13 @@ export function LogoMark({ size = 36, className = "" }: { size?: number; classNa
       <svg width={size * 0.66} height={size * 0.66} viewBox="0 0 56 56" fill="none">
         <path
           d="M12 28 Q 28 48 44 28"
-          stroke="#EFF0E4"
+          stroke="#F5EFDD"
           strokeWidth="3.2"
           strokeLinecap="round"
           fill="none"
         />
-        <ellipse cx="28" cy="28" rx="17" ry="5.5" stroke="#EFF0E4" strokeWidth="3.2" fill="none" />
-        <circle cx="28" cy="25" r="5.5" fill="#E3A23C" />
+        <ellipse cx="28" cy="28" rx="17" ry="5.5" stroke="#F5EFDD" strokeWidth="3.2" fill="none" />
+        <circle cx="28" cy="25" r="5.5" fill="#E8B94E" />
       </svg>
     </span>
   );
@@ -33,7 +33,7 @@ export function LogoLockup({
   return (
     <>
       <LogoMark size={size} />
-      <span className={`font-extrabold tracking-tight ${textClassName}`}>Déniche</span>
+      <span className={`font-extrabold tracking-tight ${textClassName}`}>Chiner</span>
     </>
   );
 }

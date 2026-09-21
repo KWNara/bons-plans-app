@@ -21,7 +21,7 @@ export function ShareButton({ titre, enseigne, className }: Props) {
     e.stopPropagation();
 
     const url = window.location.href;
-    const texte = enseigne ? `${titre} — ${enseigne}, sur Déniche` : `${titre}, sur Déniche`;
+    const texte = enseigne ? `${titre} — ${enseigne}, sur Chiner` : `${titre}, sur Chiner`;
 
     if (navigator.share) {
       try {
