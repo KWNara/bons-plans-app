@@ -314,6 +314,59 @@ try {
   $apresRetrait = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/rpc/avis_resume" -Headers $victime.h -Body (@{ p_merchant_id = $merchantId } | ConvertTo-Json)
   Verifier "Retirer son avis revient a zero" "0|0" "$($apresRetrait[0].moyenne)|$($apresRetrait[0].total)"
 
+  # =========================================================================
+  Write-Host "`nPublication d'un bon plan" -ForegroundColor Cyan
+  # =========================================================================
+  $hsRep = $hs.Clone(); $hsRep["Prefer"] = "return=representation"
+  $villes = Invoke-RestMethod -Uri "$url/rest/v1/cities?select=id&limit=2" -Headers $hs
+  $villeA = $villes[0].id
+  $villeB = $villes[1].id
+
+  $commercant = Creer "QaCommercant$suffixe" "qa-commercant-$suffixe@example.com" $null
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/users?id=eq.$($commercant.id)" -Headers $hs -Body '{"role":"commercant"}' | Out-Null
+  $merchant = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_profiles" -Headers $hsRep -Body (@{ user_id = $commercant.id; nom_enseigne = "QA Commerce $suffixe"; statut_verification = "verifie" } | ConvertTo-Json)
+  $merchantId = $merchant[0].id
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_cities" -Headers $hs -Body (@{ merchant_id = $merchantId; city_id = $villeA } | ConvertTo-Json) | Out-Null
+
+  # Un commercant encore "en_attente_verification" (statut par defaut) ne doit
+  # pas pouvoir publier, meme s'il forge sa propre annonce en son propre nom.
+  $commercantNonVerifie = Creer "QaNonVerifie$suffixe" "qa-nonverifie-$suffixe@example.com" $null
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/users?id=eq.$($commercantNonVerifie.id)" -Headers $hs -Body '{"role":"commercant"}' | Out-Null
+  $merchantNonVerifie = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_profiles" -Headers $hsRep -Body (@{ user_id = $commercantNonVerifie.id; nom_enseigne = "QA Non verifie $suffixe" } | ConvertTo-Json)
+  $merchantNonVerifieId = $merchantNonVerifie[0].id
+
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercantNonVerifie.h -Body (@{ merchant_id = $merchantNonVerifieId; titre = "Annonce non verifiee $suffixe"; statut = "publie" } | ConvertTo-Json) }
+  Verifier "Un commercant non verifie ne peut pas publier" 42501 (CodeErreur $r)
+
+  # Quota du plan gratuit : 3 annonces actives passent, la 4e est refusee.
+  for ($i = 1; $i -le 3; $i++) {
+    Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercant.h -Body (@{ merchant_id = $merchantId; titre = "Bon plan quota $i $suffixe"; statut = "publie" } | ConvertTo-Json) | Out-Null
+  }
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercant.h -Body (@{ merchant_id = $merchantId; titre = "Bon plan quota 4 $suffixe"; statut = "publie" } | ConvertTo-Json) }
+  Verifier "Le quota de 3 annonces actives est applique" "P0001" (CodeErreur $r)
+
+  $dealsCommercant = Invoke-RestMethod -Uri "$url/rest/v1/deals?select=id&merchant_id=eq.$merchantId&statut=eq.publie" -Headers $hs
+  Verifier "Exactement 3 annonces actives existent, pas 4" 3 $dealsCommercant.Count
+  $premierDeal = $dealsCommercant[0].id
+
+  # Diffuser hors des villes enregistrees par le commercant (deal_cities) :
+  # une requete forgee ne doit pas pouvoir pousser une annonce sur le fil
+  # d'une ville a laquelle il n'est pas abonne.
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deal_cities" -Headers $commercant.h -Body (@{ deal_id = $premierDeal; city_id = $villeB } | ConvertTo-Json) }
+  Verifier "Diffuser hors de ses villes enregistrees est refuse" 42501 (CodeErreur $r)
+
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deal_cities" -Headers $commercant.h -Body (@{ deal_id = $premierDeal; city_id = $villeA } | ConvertTo-Json) | Out-Null
+  $diffusion = Invoke-RestMethod -Uri "$url/rest/v1/deal_cities?select=id&deal_id=eq.$premierDeal" -Headers $hs
+  Verifier "Diffuser dans une de ses propres villes reussit" 1 $diffusion.Count
+
+  # Stockage des photos : le bucket borne desormais le type MIME et la taille
+  # (cf. migration 20260908120000) apres qu'un fichier arbitraire ait pu y
+  # etre heberge sans controle. On rejoue le scenario qui avait motive ce
+  # correctif : un fichier hors image doit etre refuse, meme dans son propre
+  # dossier (la politique RLS d'ecriture, elle, est respectee).
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/storage/v1/object/deal-photos/$($commercant.id)/pirate.txt" -Headers @{ apikey = $anon; Authorization = $commercant.h.Authorization } -ContentType "text/plain" -Body "contenu arbitraire" }
+  Verifier "Un fichier hors image est refuse au stockage" 400 (CodeErreur $r)
+
 } finally {
   # =========================================================================
   Write-Host "`nMenage" -ForegroundColor Cyan

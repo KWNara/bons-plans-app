@@ -158,6 +158,26 @@ export async function creerMerchant(userId: string, nomEnseigne: string): Promis
   return lignes[0].id;
 }
 
+/** Une ville quelconque déjà en base — utilisée comme ville de diffusion
+ * dans les fixtures, jamais créée ni modifiée par les specs elles-mêmes. */
+export async function recupererVille(): Promise<{ id: string; nom: string }> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/cities?select=id,nom&limit=1`, {
+    headers: hs,
+  });
+  const lignes = await res.json();
+  return lignes[0];
+}
+
+/** Enregistre une ville de diffusion pour un commerçant : DealForm.tsx
+ * n'affiche le formulaire de publication que si au moins une existe. */
+export async function ajouterVilleDiffusion(merchantId: string, cityId: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/merchant_cities`, {
+    method: "POST",
+    headers: hs,
+    body: JSON.stringify({ merchant_id: merchantId, city_id: cityId }),
+  });
+}
+
 /** Publie un bon plan directement en base : la publication via le vrai
  * formulaire est son propre sujet, distinct de ce que ces specs vérifient. */
 export async function creerDealPublie(merchantId: string, titre: string): Promise<string> {
