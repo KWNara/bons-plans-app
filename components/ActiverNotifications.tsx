@@ -44,10 +44,39 @@ export function ActiverNotifications({ userId }: Props) {
       return;
     }
 
-    const enregistrement = await navigator.serviceWorker.ready;
-    const abonnement = await enregistrement.pushManager.getSubscription();
+    try {
+      // `serviceWorker.ready` ne rejette JAMAIS : sans worker actif pour cette
+      // portée, la promesse reste en attente indéfiniment, l'état ne quitte pas
+      // « verification » et le bloc disparaît sans un mot.
+      const enregistrement = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, rejeter) =>
+          setTimeout(() => rejeter(new Error("service worker indisponible")), 5000)
+        ),
+      ]);
 
-    setEtat(abonnement ? "actif" : "inactif");
+      const abonnement = await enregistrement.pushManager.getSubscription();
+
+      if (!abonnement) {
+        setEtat("inactif");
+        return;
+      }
+
+      // L'abonnement du navigateur survit à une déconnexion : il ne dit rien du
+      // compte courant. C'est la ligne en base, filtrée par la politique de
+      // lecture, qui fait foi — sinon un second compte sur le même appareil
+      // voyait « activées » alors que les notifications partaient au premier.
+      const { data } = await supabase
+        .from("push_subscriptions")
+        .select("id")
+        .eq("endpoint", abonnement.endpoint)
+        .maybeSingle();
+
+      setEtat(data ? "actif" : "inactif");
+    } catch (e) {
+      console.error(e);
+      setEtat("non-supporte");
+    }
   }, []);
 
   useEffect(() => {
@@ -74,18 +103,17 @@ export function ActiverNotifications({ userId }: Props) {
 
       const { p256dh, auth } = clesAbonnement(abonnement);
 
-      // `endpoint` est unique : un réabonnement du même appareil remplace la
-      // ligne au lieu d'en créer une seconde, qui recevrait un doublon.
-      const { error } = await supabase.from("push_subscriptions").upsert(
-        {
-          user_id: userId,
-          endpoint: abonnement.endpoint,
-          p256dh,
-          auth,
-          user_agent: navigator.userAgent.slice(0, 200),
-        },
-        { onConflict: "endpoint" }
-      );
+      // Passage par une fonction plutôt qu'un upsert : l'upsert se traduit par
+      // « on conflict do update » et exige le privilège UPDATE, révoqué sur
+      // cette table. La fonction supprime l'ancienne ligne puis insère, ce qui
+      // permet aussi de récupérer un endpoint laissé par un autre compte sur ce
+      // navigateur — cas courant après une déconnexion.
+      const { error } = await supabase.rpc("enregistrer_abonnement_push", {
+        p_endpoint: abonnement.endpoint,
+        p_p256dh: p256dh,
+        p_auth: auth,
+        p_user_agent: navigator.userAgent,
+      });
 
       if (error) {
         // L'abonnement navigateur est annulé si la base l'a refusé : sans ça,

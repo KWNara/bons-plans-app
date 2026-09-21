@@ -1,29 +1,62 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+/**
+ * Position officielle d'une commune, redemandée à l'API Adresse.
+ *
+ * Les coordonnées étaient auparavant celles envoyées par le client. Or cette
+ * route s'exécute avec la clé de service, sans authentification, et écrit sur
+ * une ligne partagée par tout le site : n'importe qui pouvait déplacer une
+ * commune sur la carte de tous les visiteurs. La validation de bornes ne
+ * vérifiait que la plausibilité, jamais la correspondance avec le code INSEE.
+ *
+ * Un échec ici n'est pas bloquant : la ville s'enregistre sans position, et la
+ * carte se recentre sur son premier repère.
+ */
+async function positionDeLaCommune(
+  codeInsee: string
+): Promise<{ latitude: number; longitude: number } | null> {
+  try {
+    const res = await fetch(
+      `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(codeInsee)}&type=municipality&citycode=${encodeURIComponent(codeInsee)}&limit=1`
+    );
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const paire = data.features?.[0]?.geometry?.coordinates;
+
+    if (!Array.isArray(paire) || paire.length !== 2) return null;
+
+    const [longitude, latitude] = paire;
+
+    if (
+      typeof latitude !== "number" ||
+      typeof longitude !== "number" ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      Math.abs(latitude) > 90 ||
+      Math.abs(longitude) > 180
+    ) {
+      return null;
+    }
+
+    return { latitude, longitude };
+  } catch {
+    return null;
+  }
+}
+
 // "Trouve ou crée" une ville à partir d'un résultat de l'API Adresse
 // (api-adresse.data.gouv.fr). Public : un visiteur non connecté doit
 // pouvoir sélectionner une ville, donc pas d'authentification requise ici.
 export async function POST(req: Request) {
   const body = await req.json();
-  const { nom, code_postal, code_insee, region, latitude, longitude } = body as {
+  const { nom, code_postal, code_insee, region } = body as {
     nom?: string;
     code_postal?: string;
     code_insee?: string;
     region?: string;
-    latitude?: number;
-    longitude?: number;
   };
-
-  // Les coordonnées viennent du client : on les borne au domaine valide plutôt
-  // que de faire confiance. Une paire incomplète ou hors bornes est ignorée, la
-  // ville reste enregistrable sans position.
-  const coordonneesValides =
-    typeof latitude === "number" &&
-    typeof longitude === "number" &&
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    Math.abs(latitude) <= 90 &&
-    Math.abs(longitude) <= 180;
 
   const nomPropre = nom?.trim();
 
@@ -50,19 +83,23 @@ export async function POST(req: Request) {
   }
 
   if (existing) {
-    // Les villes enregistrées avant l'ajout des coordonnées n'en ont pas :
-    // on complète au passage, sans jamais écraser une position déjà connue.
-    if (existing.latitude === null && coordonneesValides) {
-      await supabaseAdmin
-        .from("cities")
-        .update({ latitude, longitude })
-        .eq("id", existing.id);
+    // Les villes enregistrées avant l'ajout des coordonnées n'en ont pas : on
+    // complète au passage, sans jamais écraser une position déjà connue. Le
+    // géocodage n'est donc déclenché que dans ce cas, pas à chaque sélection.
+    if (existing.latitude === null) {
+      const position = await positionDeLaCommune(code_insee!);
+
+      if (position) {
+        await supabaseAdmin.from("cities").update(position).eq("id", existing.id);
+      }
     }
 
     return Response.json({
       city: { id: existing.id, nom: existing.nom, code_postal: existing.code_postal },
     });
   }
+
+  const position = await positionDeLaCommune(code_insee!);
 
   const { data, error } = await supabaseAdmin
     .from("cities")
@@ -71,8 +108,8 @@ export async function POST(req: Request) {
       code_postal,
       code_insee,
       region: region?.trim().slice(0, 80) || null,
-      latitude: coordonneesValides ? latitude : null,
-      longitude: coordonneesValides ? longitude : null,
+      latitude: position?.latitude ?? null,
+      longitude: position?.longitude ?? null,
     })
     .select("id, nom, code_postal")
     .single();

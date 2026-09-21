@@ -285,6 +285,25 @@ export default function ComptePage() {
   }
 
   async function handleSignOut() {
+    // L'abonnement push est lié au navigateur, pas à la session : sans ce
+    // retrait, les notifications du compte qu'on quitte continueraient
+    // d'arriver sur cet appareil, y compris à la personne qui s'y connectera
+    // ensuite.
+    try {
+      if ("serviceWorker" in navigator) {
+        const enregistrement = await navigator.serviceWorker.ready;
+        const abonnement = await enregistrement.pushManager.getSubscription();
+
+        if (abonnement) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", abonnement.endpoint);
+          await abonnement.unsubscribe();
+        }
+      }
+    } catch (e) {
+      // Un échec ici ne doit pas empêcher de se déconnecter.
+      console.error(e);
+    }
+
     await supabase.auth.signOut();
     router.push("/");
   }

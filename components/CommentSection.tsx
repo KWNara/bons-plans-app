@@ -42,6 +42,7 @@ export function CommentSection({
   const [profilsMentionnes, setProfilsMentionnes] = useState<Map<string, string>>(new Map());
   const [suggestions, setSuggestions] = useState<{ id: string; pseudo: string; avatar_url: string | null }[]>([]);
   const champRef = useRef<HTMLInputElement>(null);
+  const jetonSuggestion = useRef(0);
 
   useEffect(() => {
     load();
@@ -86,10 +87,17 @@ export function CommentSection({
     // le filtre PostgREST. L'autocomplétion insérant le pseudo tel qu'il est
     // enregistré, la casse concorde dans le cas courant ; sinon la mention
     // s'affiche en texte brut, ce qui reste correct.
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("users")
       .select("id, pseudo")
       .in("pseudo", pseudos);
+
+    // Sans ce contrôle, une panne se déguisait en « aucun de ces pseudos
+    // n'existe » et toutes les mentions retombaient en texte brut.
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     setProfilsMentionnes((precedent) => {
       const suivant = new Map(precedent);
@@ -111,13 +119,26 @@ export function CommentSection({
       return;
     }
 
-    const { data } = await supabase
+    // Une requête part à chaque frappe : sans jeton de fraîcheur, c'est la
+    // dernière RÉPONSE arrivée qui gagne, pas la dernière frappe, et « le »
+    // pouvait afficher les suggestions de « l ».
+    const jeton = ++jetonSuggestion.current;
+
+    const { data, error } = await supabase
       .from("users")
       .select("id, pseudo, avatar_url")
       .ilike("pseudo", `${fragment}%`)
       .limit(5);
 
-    setSuggestions(data ?? []);
+    if (jeton !== jetonSuggestion.current) return;
+
+    // Un échec ne doit pas se lire comme « personne ne s'appelle ainsi » : on
+    // laisse la liste telle quelle plutôt que de la vider à tort.
+    if (error) return;
+
+    // Un pseudo que le motif ne sait pas relire entier (une espace, un point
+    // final) produirait une mention qui ne désigne plus la bonne personne.
+    setSuggestions((data ?? []).filter((u) => extraireMentions(`@${u.pseudo}`)[0] === u.pseudo));
   }
 
   function choisirMention(pseudo: string) {
@@ -147,6 +168,11 @@ export function CommentSection({
 
     setError(null);
     setPosting(true);
+    // Le menu d'autocomplétion ne dépend que du nombre de suggestions : sans
+    // cette remise à zéro, il restait ouvert au-dessus d'un champ vidé dès que
+    // la dernière frappe avant l'envoi appartenait à un pseudo.
+    setSuggestions([]);
+
     const { error: insertError } = await supabase
       .from("comments")
       .insert({ user_id: userId, deal_id: dealId, texte: text.trim() });

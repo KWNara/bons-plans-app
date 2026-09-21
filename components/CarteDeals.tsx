@@ -41,6 +41,48 @@ const ICONE = L.divIcon({
   popupAnchor: [0, -34],
 });
 
+type Lieu = {
+  cle: string;
+  latitude: number;
+  longitude: number;
+  enseigne: string;
+  adresse: string;
+  deals: RepereDeal[];
+};
+
+/**
+ * Regroupe les bons plans par position.
+ *
+ * Un commerçant qui publie deux offres produisait deux repères aux mêmes
+ * coordonnées, superposés au pixel près : celui du dessous était strictement
+ * inatteignable, son bon plan invisible sur la carte. Un lieu est un lieu, on
+ * y liste ce qui s'y trouve.
+ */
+function grouperParLieu(reperes: RepereDeal[]): Lieu[] {
+  const parCle = new Map<string, Lieu>();
+
+  for (const r of reperes) {
+    const cle = `${r.latitude},${r.longitude}`;
+    const existant = parCle.get(cle);
+
+    if (existant) {
+      existant.deals.push(r);
+      continue;
+    }
+
+    parCle.set(cle, {
+      cle,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      enseigne: r.enseigne,
+      adresse: r.adresse,
+      deals: [r],
+    });
+  }
+
+  return [...parCle.values()];
+}
+
 /** Recadre la vue quand la ville change, la carte n'étant montée qu'une fois. */
 function Recadrage({ reperes, centre }: Props) {
   const carte = useMap();
@@ -73,6 +115,8 @@ export default function CarteDeals({ reperes, centre }: Props) {
     [centre]
   );
 
+  const lieux = useMemo(() => grouperParLieu(reperes), [reperes]);
+
   return (
     <MapContainer
       center={position}
@@ -90,26 +134,37 @@ export default function CarteDeals({ reperes, centre }: Props) {
 
       <Recadrage reperes={reperes} centre={centre} />
 
-      {reperes.map((r) => {
-        const badge = discountLabel(r);
-        return (
-          <Marker key={r.id} position={[r.latitude, r.longitude]} icon={ICONE}>
-            <Popup>
-              <span className="block text-xs font-semibold uppercase tracking-wide text-teal">
-                {r.enseigne}
-              </span>
-              <Link
-                href={`/bons-plans/${r.id}`}
-                className="block font-bold text-ink leading-snug mt-0.5 hover:underline"
-              >
-                {r.titre}
-              </Link>
-              {badge && <span className="block text-tag font-bold mt-0.5">{badge}</span>}
-              <span className="block text-ink/60 mt-1">{r.adresse}</span>
-            </Popup>
-          </Marker>
-        );
-      })}
+      {lieux.map((lieu) => (
+        <Marker key={lieu.cle} position={[lieu.latitude, lieu.longitude]} icon={ICONE}>
+          <Popup>
+            <span className="block text-xs font-semibold uppercase tracking-wide text-teal">
+              {lieu.enseigne}
+            </span>
+
+            <span className="block">
+              {lieu.deals.map((d, i) => {
+                const badge = discountLabel(d);
+                return (
+                  <span
+                    key={d.id}
+                    className={`block ${i > 0 ? "mt-2 pt-2 border-t border-ink/10" : "mt-0.5"}`}
+                  >
+                    <Link
+                      href={`/bons-plans/${d.id}`}
+                      className="block font-bold text-ink leading-snug hover:underline"
+                    >
+                      {d.titre}
+                    </Link>
+                    {badge && <span className="block text-tag font-bold">{badge}</span>}
+                  </span>
+                );
+              })}
+            </span>
+
+            <span className="block text-ink/60 mt-2">{lieu.adresse}</span>
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }

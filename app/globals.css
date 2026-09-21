@@ -146,6 +146,46 @@ body {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Habillage de la carte Leaflet
+   ---------------------------------------------------------------------------
+   Leaflet impose ses couleurs avec une spécificité supérieure à celle des
+   utilitaires Tailwind : `.leaflet-container a` (0,1,1) l'emporte sur
+   `.text-ink` (0,1,0), si bien que les titres des infobulles s'affichaient en
+   bleu par-dessus la classe qui leur était donnée. Et son fond blanc figé
+   restait blanc en mode sombre.
+
+   Sa feuille arrive dans le paquet dynamique de la carte, donc APRÈS celle-ci :
+   à spécificité égale, c'est elle qui gagne. D'où le préfixe `.carte-deniche`
+   sur chaque règle — une classe de plus suffit à l'emporter quel que soit
+   l'ordre de chargement, là où des `!important` semés partout auraient marché
+   par la force sans dire pourquoi. */
+
+.carte-deniche .leaflet-popup-content-wrapper,
+.carte-deniche .leaflet-popup-tip {
+  background: rgb(var(--c-surface));
+  color: rgb(var(--c-ink));
+  box-shadow: 0 4px 14px rgb(var(--ombre) / 0.12);
+}
+
+/* Le lien reprend la couleur que lui donne sa classe utilitaire, au lieu du
+   bleu que Leaflet impose à tous les liens de la carte. */
+.carte-deniche .leaflet-popup-content a {
+  color: inherit;
+}
+
+.carte-deniche a.leaflet-popup-close-button {
+  color: rgb(var(--c-ink) / 0.5);
+}
+
+/* Le fond visible avant le chargement des tuiles suit lui aussi le thème.
+   Seule la famille est héritée : le raccourci `font` complet emportait aussi la
+   taille, et l'attribution comme les boutons de zoom passaient de 11 à 16 px. */
+.carte-deniche .leaflet-container {
+  background: rgb(var(--c-paper));
+  font-family: inherit;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

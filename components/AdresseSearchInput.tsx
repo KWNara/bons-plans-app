@@ -25,6 +25,7 @@ export function AdresseSearchInput({ valeur, onChoisir, onEffacer }: Props) {
   const [suggestions, setSuggestions] = useState<AdresseTrouvee[]>([]);
   const [chargement, setChargement] = useState(false);
   const [echec, setEchec] = useState(false);
+  const [enEdition, setEnEdition] = useState(false);
 
   useEffect(() => {
     if (requete.trim().length < 4) {
@@ -55,7 +56,11 @@ export function AdresseSearchInput({ valeur, onChoisir, onEffacer }: Props) {
     };
   }, [requete]);
 
-  if (valeur) {
+  // « Changer » n'efface plus rien : il ouvre la saisie. L'ancien bouton
+  // appelait directement l'effacement en base, si bien que le seul moyen de
+  // modifier son adresse était de la détruire, sans confirmation ni retour en
+  // arrière — et le message affiché disait « Adresse retirée ».
+  if (valeur && !enEdition) {
     return (
       <div className="mb-4">
         <span className="text-xs font-semibold text-ink/60 uppercase tracking-wide">Adresse</span>
@@ -64,13 +69,20 @@ export function AdresseSearchInput({ valeur, onChoisir, onEffacer }: Props) {
           <span className="flex-1 min-w-0 text-sm text-ink truncate">{valeur}</span>
           <button
             type="button"
+            onClick={() => setEnEdition(true)}
+            className="press text-xs font-semibold text-teal shrink-0 -my-2 py-2"
+          >
+            Changer
+          </button>
+          <button
+            type="button"
             onClick={() => {
+              if (!window.confirm("Retirer ton adresse ? Tu n'apparaîtras plus sur la carte.")) return;
               onEffacer();
-              setRequete("");
             }}
             className="press text-xs font-semibold text-ink/60 hover:text-tag shrink-0 -my-2 py-2"
           >
-            Changer
+            Retirer
           </button>
         </div>
       </div>
@@ -83,7 +95,7 @@ export function AdresseSearchInput({ valeur, onChoisir, onEffacer }: Props) {
         htmlFor={champId}
         className="text-xs font-semibold text-ink/60 uppercase tracking-wide"
       >
-        Adresse (optionnel)
+        {valeur ? "Nouvelle adresse" : "Adresse (optionnel)"}
       </label>
       <input
         id={champId}
@@ -96,6 +108,21 @@ export function AdresseSearchInput({ valeur, onChoisir, onEffacer }: Props) {
       />
       <p className="mt-1 text-xs text-ink/60">
         Choisis une suggestion pour apparaître sur la carte.
+        {valeur && (
+          <>
+            {" "}
+            <button
+              type="button"
+              onClick={() => {
+                setEnEdition(false);
+                setRequete("");
+              }}
+              className="press font-semibold text-teal underline"
+            >
+              Annuler
+            </button>
+          </>
+        )}
       </p>
 
       {chargement && (
@@ -124,6 +151,7 @@ export function AdresseSearchInput({ valeur, onChoisir, onEffacer }: Props) {
                   onChoisir(a);
                   setRequete("");
                   setSuggestions([]);
+                  setEnEdition(false);
                 }}
                 className="press w-full text-left px-3.5 py-3 text-sm hover:bg-paper"
               >

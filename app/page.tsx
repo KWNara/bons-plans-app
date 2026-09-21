@@ -36,6 +36,16 @@ export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesEnEchec, setCategoriesEnEchec] = useState(false);
   const [flashSeul, setFlashSeul] = useState(false);
+  // Le comptage et le filtre partageaient l'horloge implicite de `Date.now()`,
+  // figée à l'évaluation du memo, alors que le badge des cartes se rafraîchit
+  // chaque minute : sur un onglet resté ouvert, les deux vues du même état
+  // finissaient par se contredire.
+  const [maintenant, setMaintenant] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setMaintenant(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("recent");
   const [deals, setDeals] = useState<FeedDeal[]>([]);
@@ -187,7 +197,11 @@ export default function Home() {
 
       if (userId && feedDeals.length > 0) {
         const dealIds = feedDeals.map((d) => d.id);
-        const [{ data: likes }, { data: favorites }, { data: reposts }] = await Promise.all([
+        const [
+          { data: likes, error: erreurLikes },
+          { data: favorites, error: erreurFavoris },
+          { data: reposts, error: erreurReposts },
+        ] = await Promise.all([
           supabase.from("likes").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
           supabase.from("favorites").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
           supabase.from("reposts").select("deal_id").eq("user_id", userId).in("deal_id", dealIds),
@@ -195,9 +209,12 @@ export default function Home() {
 
         if (stale) return;
 
-        setLikedIds(new Set((likes ?? []).map((l) => l.deal_id)));
-        setFavoritedIds(new Set((favorites ?? []).map((f) => f.deal_id)));
-        setRepostedIds(new Set((reposts ?? []).map((r) => r.deal_id)));
+        // Sur échec, on garde l'ensemble précédent plutôt que d'en écrire un
+        // vide : un cœur allumé qui s'éteint tout seul laisse croire que le
+        // like a été perdu, et un second clic tenterait un doublon.
+        if (!erreurLikes) setLikedIds(new Set((likes ?? []).map((l) => l.deal_id)));
+        if (!erreurFavoris) setFavoritedIds(new Set((favorites ?? []).map((f) => f.deal_id)));
+        if (!erreurReposts) setRepostedIds(new Set((reposts ?? []).map((r) => r.deal_id)));
       } else {
         setLikedIds(new Set());
         setFavoritedIds(new Set());
@@ -214,7 +231,7 @@ export default function Home() {
     // Le filtre flash se calcule ici et non dans la requête : « se termine dans
     // moins de 24 h » est une fenêtre glissante, la mettre dans le SQL
     // obligerait à relancer la requête à chaque minute pour rester juste.
-    const base = flashSeul ? deals.filter((d) => estFlash(d.date_fin)) : deals;
+    const base = flashSeul ? deals.filter((d) => estFlash(d.date_fin, maintenant)) : deals;
 
     if (tab === "ville") return base;
 
@@ -228,9 +245,19 @@ export default function Home() {
     }
 
     return [...base].sort((a, b) => score(b) - score(a));
-  }, [tab, deals, flashSeul, followedMerchantIds, topCategoryIds]);
+  }, [tab, deals, flashSeul, maintenant, followedMerchantIds, topCategoryIds]);
 
-  const nombreFlash = useMemo(() => deals.filter((d) => estFlash(d.date_fin)).length, [deals]);
+  const nombreFlash = useMemo(
+    () => deals.filter((d) => estFlash(d.date_fin, maintenant)).length,
+    [deals, maintenant]
+  );
+
+  // La puce n'est affichée que s'il reste des offres flash. Sans ce
+  // relâchement, la dernière qui expire la fait disparaître alors que le filtre
+  // reste actif : le fil se vide et plus rien ne permet de le rouvrir.
+  useEffect(() => {
+    if (nombreFlash === 0 && flashSeul) setFlashSeul(false);
+  }, [nombreFlash, flashSeul]);
 
   if (!loaded) return null;
 

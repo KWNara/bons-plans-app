@@ -53,8 +53,11 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(titre, {
       body: donnees.corps || "",
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      // Les icônes vivent sous /icons/ (cf. public/manifest.json) : à la racine
+      // elles renvoient 404 et la notification s'affiche avec l'icône par
+      // défaut du navigateur, sans rien qui rappelle Déniche.
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       // Le tag regroupe les notifications d'une même conversation : dix
       // messages d'affilée remplacent la précédente au lieu d'empiler dix
       // bannières.

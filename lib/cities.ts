@@ -46,7 +46,12 @@ export async function searchCities(query: string, signal?: AbortSignal): Promise
 }
 
 export async function reverseGeocodeCity(lon: number, lat: number): Promise<BanSuggestion | null> {
-  const res = await fetch(`https://api-adresse.data.gouv.fr/reverse/?lon=${lon}&lat=${lat}`);
+  // `type=municipality` comme dans searchCities : sans ce filtre, la réponse est
+  // l'adresse la PLUS PROCHE, et sa géométrie — celle d'un numéro de rue —
+  // finissait enregistrée comme position de la commune entière.
+  const res = await fetch(
+    `https://api-adresse.data.gouv.fr/reverse/?lon=${lon}&lat=${lat}&type=municipality`
+  );
   if (!res.ok) {
     throw new Error(`Localisation indisponible (HTTP ${res.status}).`);
   }
@@ -93,6 +98,11 @@ export async function rechercherAdresses(
   const data = await res.json();
 
   return (data.features ?? [])
+    // L'endpoint /search/ renvoie aussi des communes entières. Le filtre se
+    // fait ici plutôt que par `type=housenumber` dans l'URL : ce paramètre
+    // écarterait aussi les voies et les lieux-dits, et un commerçant installé
+    // sur une rue sans numéro ne trouverait plus rien.
+    .filter((f: any) => f.properties?.type !== "municipality")
     .map((f: any) => {
       const { latitude, longitude } = parseCoordonnees(f.geometry);
       return { libelle: f.properties.label as string, latitude, longitude };

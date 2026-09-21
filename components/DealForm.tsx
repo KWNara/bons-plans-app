@@ -132,6 +132,11 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       return;
     }
 
+    // Le nettoyage n'annule que le minuteur, jamais une requête déjà partie :
+    // sans ce drapeau, une réponse lente pouvait poser un avertissement sur un
+    // titre que le commerçant avait déjà changé entre-temps.
+    let annule = false;
+
     const timeout = setTimeout(async () => {
       let query = supabase
         .from("deals")
@@ -143,7 +148,14 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
       if (isEdit) query = query.neq("id", existingDeal!.id);
 
-      const { data } = await query;
+      const { data, error } = await query;
+
+      if (annule) return;
+
+      // Un échec ne vaut pas « aucun doublon » : l'avertissement n'étant pas
+      // bloquant, mieux vaut ne rien affirmer que rassurer à tort.
+      if (error) return;
+
       setDuplicateWarning(
         data && data.length > 0
           ? "Un bon plan avec ce même titre existe déjà dans une de ces villes pour ton compte. Tu peux quand même publier si ce n'est pas un doublon."
@@ -151,7 +163,10 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       );
     }, 500);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      annule = true;
+      clearTimeout(timeout);
+    };
   }, [titre, selectedCityIds, merchantId, isEdit, existingDeal]);
 
   function toggleCity(cityId: string) {

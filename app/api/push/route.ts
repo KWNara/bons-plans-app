@@ -59,6 +59,7 @@ export async function POST(req: Request) {
   });
 
   let envoyes = 0;
+  let echecs = 0;
   const perimes: string[] = [];
 
   await Promise.all(
@@ -75,7 +76,16 @@ export async function POST(req: Request) {
         // 404 et 410 signifient que l'abonnement est mort côté navigateur
         // (application désinstallée, données effacées). Le garder ferait
         // échouer tous les envois suivants pour rien.
-        if (statut === 404 || statut === 410) perimes.push(a.id);
+        if (statut === 404 || statut === 410) {
+          perimes.push(a.id);
+          return;
+        }
+
+        // Tout le reste — clés VAPID refusées, service de push en panne — était
+        // avalé sans trace, et la route répondait 200 « 0 envoi » : une panne
+        // totale devenait indiscernable d'un compte sans appareil abonné.
+        echecs += 1;
+        console.error("[push] échec d'envoi", { statut, endpoint: a.endpoint }, e);
       }
     })
   );
@@ -84,7 +94,11 @@ export async function POST(req: Request) {
     await supabaseAdmin.from("push_subscriptions").delete().in("id", perimes);
   }
 
-  return Response.json({ envoyes, supprimes: perimes.length });
+  // Aucun envoi réussi alors que des appareils étaient abonnés et que tout a
+  // échoué : c'est une panne, et l'appelant doit pouvoir la voir.
+  const statutReponse = envoyes === 0 && echecs > 0 ? 502 : 200;
+
+  return Response.json({ envoyes, echecs, supprimes: perimes.length }, { status: statutReponse });
 }
 
 function secretsEgaux(a: string, b: string): boolean {

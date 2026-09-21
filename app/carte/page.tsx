@@ -165,7 +165,10 @@ export default function CartePage() {
           />
         ) : (
           <>
-            <div className="h-80 sm:h-[26rem] rounded-card overflow-hidden border border-ink/10 shadow-soft">
+            {/* `carte-deniche` porte l'habillage Leaflet aux couleurs du thème
+                (cf. app/globals.css) : sans cette classe, la feuille de Leaflet
+                l'emporte et l'infobulle reste blanche à liens bleus. */}
+            <div className="carte-deniche h-80 sm:h-[26rem] rounded-card overflow-hidden border border-ink/10 shadow-soft">
               <CarteDeals reperes={reperes} centre={centre} />
             </div>
 
