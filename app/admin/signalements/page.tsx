@@ -13,6 +13,7 @@ import {
   Trash2,
   Ban,
   Flag,
+  MessageSquareOff,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -37,9 +38,10 @@ const STATUT_BADGES: Record<string, { label: string; className: string }> = {
 
 type Report = {
   id: string;
-  target_type: "deal" | "comment" | "merchant";
+  target_type: "deal" | "comment" | "merchant" | "message";
   deal_id: string | null;
   merchant_id: string | null;
+  message_id: string | null;
   motif: string;
   reason: string | null;
   status: "en_attente" | "traite" | "rejete";
@@ -47,6 +49,10 @@ type Report = {
   reporter: { pseudo: string } | null;
   deals: { titre: string; statut: string } | null;
   merchant_profiles: { nom_enseigne: string; suspendu: boolean } | null;
+  // La lecture n'est possible que pour un message déjà signalé (cf. la
+  // politique dédiée) : si la ligne a depuis été supprimée, la jointure
+  // renvoie simplement `null`.
+  messages: { texte: string | null; expediteur: { pseudo: string } | null } | null;
 };
 
 type Sort = "date" | "motif";
@@ -64,7 +70,7 @@ export default function AdminSignalementsPage() {
     const { data, error } = await supabase
       .from("reports")
       .select(
-        "id, target_type, deal_id, merchant_id, motif, reason, status, created_at, reporter:reporter_id (pseudo), deals:deal_id (titre, statut), merchant_profiles:merchant_id (nom_enseigne, suspendu)"
+        "id, target_type, deal_id, merchant_id, message_id, motif, reason, status, created_at, reporter:reporter_id (pseudo), deals:deal_id (titre, statut), merchant_profiles:merchant_id (nom_enseigne, suspendu), messages:message_id (texte, expediteur:expediteur (pseudo))"
       )
       .order("created_at", { ascending: false });
 
@@ -172,6 +178,19 @@ export default function AdminSignalementsPage() {
       report.id,
       () => supabase.from("deals").delete().eq("id", report.deal_id!),
       "Le bon plan n'a pas pu être supprimé."
+    );
+  }
+
+  function supprimerMessage(report: Report) {
+    const confirme = window.confirm(
+      "Supprimer définitivement ce message ? Cette action est irréversible."
+    );
+    if (!confirme) return;
+
+    executer(
+      report.id,
+      () => supabase.from("messages").delete().eq("id", report.message_id!),
+      "Le message n'a pas pu être supprimé."
     );
   }
 
@@ -322,7 +341,9 @@ export default function AdminSignalementsPage() {
                         ? "Bon plan"
                         : r.target_type === "merchant"
                           ? "Commerçant"
-                          : "Commentaire"}
+                          : r.target_type === "message"
+                            ? "Message privé"
+                            : "Commentaire"}
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
                       <span
@@ -354,6 +375,19 @@ export default function AdminSignalementsPage() {
                         <span className="text-tag text-xs ml-2 font-medium">suspendu</span>
                       )}
                     </Link>
+                  )}
+                  {r.target_type === "message" && (
+                    <p className="text-sm text-ink/70 mb-1">
+                      Message de{" "}
+                      <strong className="text-ink">
+                        {r.messages?.expediteur?.pseudo ?? "(compte supprimé)"}
+                      </strong>{" "}
+                      : «{" "}
+                      <span className="italic break-words">
+                        {r.messages?.texte ?? "(message déjà supprimé)"}
+                      </span>{" "}
+                      »
+                    </p>
                   )}
 
                   <p className="text-sm text-ink/70 break-words">
@@ -416,6 +450,16 @@ export default function AdminSignalementsPage() {
                       >
                         <Ban size={14} />
                         {r.merchant_profiles?.suspendu ? "Réactiver" : "Suspendre"}
+                      </button>
+                    )}
+                    {r.target_type === "message" && r.message_id && r.messages && (
+                      <button
+                        onClick={() => supprimerMessage(r)}
+                        disabled={occupe}
+                        className="press inline-flex items-center gap-1.5 rounded-control bg-tag text-white px-3 py-2 text-sm font-medium shadow-soft disabled:opacity-50"
+                      >
+                        <MessageSquareOff size={14} />
+                        Supprimer le message
                       </button>
                     )}
                   </div>

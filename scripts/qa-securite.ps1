@@ -211,6 +211,109 @@ try {
   $reste = (Invoke-RestMethod -Uri "$url/rest/v1/merchant_profiles?select=adresse&id=eq.$m" -Headers $hs)[0].adresse
   Verifier "Un tiers ne modifie pas l'adresse d'un commercant" "" "$reste"
 
+  # =========================================================================
+  Write-Host "`nBlocage" -ForegroundColor Cyan
+  # =========================================================================
+  # Bob et Mallory sont deja amis a ce stade (section precedente).
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/blocked_users" -Headers $bob.h -Body (@{ blocker_id = $bob.id; blocked_id = $bob.id } | ConvertTo-Json) }
+  Verifier "On ne peut pas se bloquer soi-meme" 23514 (CodeErreur $r)
+
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/blocked_users" -Headers $bob.h -Body (@{ blocker_id = $bob.id; blocked_id = $mallory.id } | ConvertTo-Json) | Out-Null
+
+  $amitieRestante = Invoke-RestMethod -Uri "$url/rest/v1/friendships?select=id&or=(and(user_a.eq.$($bob.id),user_b.eq.$($mallory.id)),and(user_a.eq.$($mallory.id),user_b.eq.$($bob.id)))" -Headers $hs
+  Verifier "Bloquer rompt l'amitie existante" 0 $amitieRestante.Count
+
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/messages" -Headers $mallory.h -Body (@{ expediteur = $mallory.id; destinataire = $bob.id; texte = "coucou" } | ConvertTo-Json) }
+  Verifier "La personne bloquee ne peut plus ecrire" 42501 (CodeErreur $r)
+
+  $ua = if ($bob.id -lt $mallory.id) { $bob.id } else { $mallory.id }
+  $ub = if ($bob.id -lt $mallory.id) { $mallory.id } else { $bob.id }
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/friendships" -Headers $mallory.h -Body (@{ user_a = $ua; user_b = $ub; demandeur = $mallory.id } | ConvertTo-Json) }
+  Verifier "Une nouvelle demande d'ami est refusee apres blocage" 42501 (CodeErreur $r)
+
+  $vuParMallory = Invoke-RestMethod -Uri "$url/rest/v1/blocked_users?select=id" -Headers $mallory.h
+  Verifier "La personne bloquee ne voit pas qu'elle l'est" 0 $vuParMallory.Count
+
+  $vuParBob = Invoke-RestMethod -Uri "$url/rest/v1/blocked_users?select=id&blocked_id=eq.$($mallory.id)" -Headers $bob.h
+  Verifier "Qui bloque voit son propre blocage" 1 $vuParBob.Count
+
+  Invoke-RestMethod -Method Delete -Uri "$url/rest/v1/blocked_users?blocker_id=eq.$($bob.id)&blocked_id=eq.$($mallory.id)" -Headers $bob.h | Out-Null
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/friendships" -Headers $mallory.h -Body (@{ user_a = $ua; user_b = $ub; demandeur = $mallory.id } | ConvertTo-Json) | Out-Null
+  $reouverte = Invoke-RestMethod -Uri "$url/rest/v1/friendships?select=statut&user_a=eq.$ua&user_b=eq.$ub" -Headers $hs
+  Verifier "Debloquer rouvre la possibilite d'une demande" "en_attente" $reouverte[0].statut
+
+  # =========================================================================
+  Write-Host "`nSignalement d'un message" -ForegroundColor Cyan
+  # =========================================================================
+  $camille = Creer "qaCamille$suffixe" "qa-camille-$suffixe@example.com" $null
+  $david = Creer "qaDavid$suffixe" "qa-david-$suffixe@example.com" $null
+  $ua2 = if ($camille.id -lt $david.id) { $camille.id } else { $david.id }
+  $ub2 = if ($camille.id -lt $david.id) { $david.id } else { $camille.id }
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/friendships" -Headers $hs -Body (@{ user_a = $ua2; user_b = $ub2; demandeur = $camille.id; statut = "acceptee" } | ConvertTo-Json) | Out-Null
+
+  $hc = $camille.h.Clone(); $hc["Prefer"] = "return=representation"
+  $msg = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/messages" -Headers $hc -Body (@{ expediteur = $camille.id; destinataire = $david.id; texte = "message a signaler" } | ConvertTo-Json)
+  $msgId = $msg[0].id
+
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/reports" -Headers $david.h -Body (@{ reporter_id = $david.id; target_type = "message"; message_id = $msgId; motif = "contenu_inapproprie" } | ConvertTo-Json) | Out-Null
+
+  # Le code Postgres d'une violation d'unicite (23505), comme partout ailleurs
+  # dans ce script — pas le statut HTTP, que CodeErreur ignore des que le corps
+  # porte un `.code` structure.
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/reports" -Headers $david.h -Body (@{ reporter_id = $david.id; target_type = "message"; message_id = $msgId; motif = "autre" } | ConvertTo-Json) }
+  Verifier "Un meme message ne se signale pas deux fois" 23505 (CodeErreur $r)
+
+  $moderateur = Creer "qaModerateur$suffixe" "qa-moderateur-$suffixe@example.com" $null
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/users?id=eq.$($moderateur.id)" -Headers $hs -Body '{"role":"admin"}' | Out-Null
+
+  $vuParAdmin = Invoke-RestMethod -Uri "$url/rest/v1/messages?select=id&id=eq.$msgId" -Headers $moderateur.h
+  Verifier "Un admin lit un message signale" 1 $vuParAdmin.Count
+
+  $vuParTiers = Invoke-RestMethod -Uri "$url/rest/v1/messages?select=id&id=eq.$msgId" -Headers $victime.h
+  Verifier "Un tiers non admin ne lit pas ce message" 0 $vuParTiers.Count
+
+  Invoke-RestMethod -Method Delete -Uri "$url/rest/v1/messages?id=eq.$msgId" -Headers $moderateur.h | Out-Null
+  $apresSuppression = Invoke-RestMethod -Uri "$url/rest/v1/messages?select=id&id=eq.$msgId" -Headers $hs
+  Verifier "Un admin supprime un message signale" 0 $apresSuppression.Count
+
+  # =========================================================================
+  Write-Host "`nAvis sur les commercants" -ForegroundColor Cyan
+  # =========================================================================
+  $mProfil = Invoke-RestMethod -Uri "$url/rest/v1/merchant_profiles?select=id,user_id&limit=1" -Headers $hs
+  $merchantId = $mProfil[0].id
+  $proprietaireId = $mProfil[0].user_id
+
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_reviews" -Headers $bob.h -Body (@{ merchant_id = $merchantId; user_id = $bob.id; note = 5; commentaire = "Tres bon accueil" } | ConvertTo-Json) | Out-Null
+
+  # `round(avg(note), 1)` renvoie un numeric a une decimale ("5.0", pas "5") :
+  # c'est la forme reelle du JSON renvoye, pas une approximation du test.
+  $resume1 = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/rpc/avis_resume" -Headers $victime.h -Body (@{ p_merchant_id = $merchantId } | ConvertTo-Json)
+  Verifier "Le resume public reflete le premier avis" "5.0|1" "$($resume1[0].moyenne)|$($resume1[0].total)"
+
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_reviews" -Headers $bob.h -Body (@{ merchant_id = $merchantId; user_id = $bob.id; note = 3 } | ConvertTo-Json) }
+  Verifier "Un meme commercant ne se note pas deux fois" 23505 (CodeErreur $r)
+
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/merchant_reviews?merchant_id=eq.$merchantId&user_id=eq.$($bob.id)" -Headers $bob.h -Body '{"note":3,"commentaire":"Finalement moyen"}' | Out-Null
+  $resume2 = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/rpc/avis_resume" -Headers $victime.h -Body (@{ p_merchant_id = $merchantId } | ConvertTo-Json)
+  Verifier "Modifier son avis change la moyenne" "3.0|1" "$($resume2[0].moyenne)|$($resume2[0].total)"
+
+  # Le declencheur regarde la correspondance merchant_profiles.user_id, pas
+  # auth.uid() : il s'applique donc aussi via la cle de service, ce qui evite
+  # d'avoir a se connecter comme le vrai proprietaire pour verifier ce cas.
+  # Le message d'erreur contient un caractere accentue ; PowerShell 5.1 lit ce
+  # fichier .ps1 en ANSI, donc comparer sur un tel caractere echoue pour de
+  # mauvaises raisons (deja vu sur generate-og-image.ps1). On teste plutot le
+  # code Postgres de l'exception (P0001 = raise exception explicite) et
+  # l'absence de toute ligne creee.
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_reviews" -Headers $hs -Body (@{ merchant_id = $merchantId; user_id = $proprietaireId; note = 5 } | ConvertTo-Json) }
+  Verifier "Un commercant ne note pas sa propre boutique (exception levee)" "P0001" (CodeErreur $r)
+  $aucunAvisProprietaire = Invoke-RestMethod -Uri "$url/rest/v1/merchant_reviews?select=id&merchant_id=eq.$merchantId&user_id=eq.$proprietaireId" -Headers $hs
+  Verifier "... et aucune ligne n'a ete creee" 0 $aucunAvisProprietaire.Count
+
+  Invoke-RestMethod -Method Delete -Uri "$url/rest/v1/merchant_reviews?merchant_id=eq.$merchantId&user_id=eq.$($bob.id)" -Headers $bob.h | Out-Null
+  $apresRetrait = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/rpc/avis_resume" -Headers $victime.h -Body (@{ p_merchant_id = $merchantId } | ConvertTo-Json)
+  Verifier "Retirer son avis revient a zero" "0|0" "$($apresRetrait[0].moyenne)|$($apresRetrait[0].total)"
+
 } finally {
   # =========================================================================
   Write-Host "`nMenage" -ForegroundColor Cyan

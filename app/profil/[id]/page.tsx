@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, UserPlus, UserCheck, Check, MessageCircle } from "lucide-react";
+import { ChevronLeft, MapPin, UserPlus, UserCheck, Check, MessageCircle, ShieldOff, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { discountLabel } from "@/lib/dealFormat";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
 import { envoyerDemande, relationAvec, repondreDemande, retirerAmi, type Relation } from "@/lib/amis";
+import { aiBloque, bloquer } from "@/lib/blocages";
 import { Avatar } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -49,6 +50,10 @@ export default function ProfilPage() {
   const [trouvailles, setTrouvailles] = useState<Trouvaille[]>([]);
   const [trouvaillesEnEchec, setTrouvaillesEnEchec] = useState(false);
   const [relation, setRelation] = useState<Relation>({ statut: "aucune" });
+  // `undefined` = pas encore su. Distinct de `false` pour ne jamais laisser
+  // apparaître un instant les boutons « Ajouter en ami » à quelqu'un qu'on a
+  // en fait déjà bloqué.
+  const [bloque, setBloque] = useState<boolean | undefined>(undefined);
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -102,6 +107,9 @@ export default function ProfilPage() {
     relationAvec(moi, cible)
       .then(setRelation)
       .catch(() => setRelation({ statut: "aucune" }));
+    aiBloque(moi, cible)
+      .then(setBloque)
+      .catch(() => setBloque(false));
   }, [moi, cible]);
 
   async function agir(action: () => Promise<{ error: unknown }>, echec: string) {
@@ -122,6 +130,37 @@ export default function ProfilPage() {
     }
 
     setRelation(await relationAvec(moi, cible));
+  }
+
+  async function basculerBlocage() {
+    if (!moi) {
+      router.push("/connexion");
+      return;
+    }
+    if (occupe) return;
+
+    if (!bloque && !window.confirm(`Bloquer ${profil?.pseudo ?? "ce compte"} ? Vous ne serez plus amis et ne pourrez plus vous écrire.`)) {
+      return;
+    }
+
+    setErreur(null);
+    setOccupe(true);
+
+    const { error } = bloque
+      ? await supabase.from("blocked_users").delete().eq("blocker_id", moi).eq("blocked_id", cible)
+      : await bloquer(moi, cible);
+
+    setOccupe(false);
+
+    if (error) {
+      setErreur(bloque ? "Le déblocage a échoué." : "Le blocage a échoué.");
+      return;
+    }
+
+    setBloque(!bloque);
+    // Le blocage rompt l'amitié côté base : la vue doit suivre immédiatement,
+    // sans attendre un nouvel aller-retour.
+    if (!bloque) setRelation({ statut: "aucune" });
   }
 
   if (state === "loading") {
@@ -211,7 +250,21 @@ export default function ProfilPage() {
 
         {erreur && <p className="text-tag text-sm mt-3">{erreur}</p>}
 
-        {relation.statut !== "moi" && (
+        {relation.statut !== "moi" && bloque === true && (
+          <div className="mt-4 rounded-control border border-ink/15 bg-surface p-3.5">
+            <p className="text-sm text-ink/70 mb-2.5">Tu as bloqué ce compte.</p>
+            <button
+              onClick={basculerBlocage}
+              disabled={occupe}
+              className="press inline-flex items-center gap-1.5 rounded-control border border-ink/15 px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
+            >
+              {occupe ? <Spinner size={15} /> : <ShieldCheck size={15} />}
+              Débloquer
+            </button>
+          </div>
+        )}
+
+        {relation.statut !== "moi" && bloque === false && (
           <div className="flex flex-wrap gap-2 mt-4">
             {relation.statut === "aucune" && (
               <button
@@ -277,6 +330,17 @@ export default function ProfilPage() {
               </>
             )}
           </div>
+        )}
+
+        {relation.statut !== "moi" && bloque === false && (
+          <button
+            onClick={basculerBlocage}
+            disabled={occupe}
+            className="press flex items-center gap-1.5 text-xs text-ink/50 hover:text-tag mt-3 -ml-1 px-1 py-1 disabled:opacity-60"
+          >
+            <ShieldOff size={13} />
+            Bloquer ce compte
+          </button>
         )}
 
         <section className="mt-7">

@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         "/messages",
         "/notifications",
         "/alertes",
+        "/bloques",
       ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

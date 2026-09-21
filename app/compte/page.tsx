@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, ShieldCheck, Clock, Store, Repeat2, Bookmark, LogOut, Camera, Users, MessagesSquare } from "lucide-react";
+import { ChevronLeft, MapPin, ShieldCheck, Clock, Store, Repeat2, Bookmark, LogOut, Camera, Users, MessagesSquare, ShieldOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CitySearchInput } from "@/components/CitySearchInput";
 import { resolveCity, type BanSuggestion } from "@/lib/cities";
@@ -634,6 +634,13 @@ export default function ComptePage() {
             >
               <MessagesSquare size={17} className="text-teal" />
               Messages
+            </Link>
+            <Link
+              href="/bloques"
+              className="press flex flex-col items-center gap-1.5 rounded-control border border-ink/15 py-3 text-sm font-medium text-ink hover:bg-paper col-span-2"
+            >
+              <ShieldOff size={17} className="text-teal" />
+              Comptes bloqués
             </Link>
           </div>
         </Card>

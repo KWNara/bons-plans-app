@@ -12,6 +12,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
 import { Avatar } from "@/components/ui/Avatar";
 import { discountLabel } from "@/lib/dealFormat";
+import { ReportButton } from "@/components/ReportButton";
 
 type Message = {
   id: string;
@@ -288,12 +289,25 @@ export default function ConversationPage() {
 
                   {m.texte && <p className="text-sm break-words">{m.texte}</p>}
 
-                  <p className={`text-[11px] mt-1 ${deMoi ? "text-white/70" : "text-ink/60"}`}>
-                    {new Date(m.created_at).toLocaleTimeString("fr-FR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className={`text-[11px] ${deMoi ? "text-white/70" : "text-ink/60"}`}>
+                      {new Date(m.created_at).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    {/* On ne signale que ce qu'on a reçu : signaler son propre
+                        message n'aurait aucun sens. */}
+                    {!deMoi && (
+                      <ReportButton
+                        targetType="message"
+                        targetId={m.id}
+                        userId={moi}
+                        iconOnly
+                        className="press text-ink/40 hover:text-tag -m-1 p-1"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );

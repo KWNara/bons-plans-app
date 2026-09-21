@@ -15,7 +15,7 @@ const MOTIFS: { value: string; label: string }[] = [
 ];
 
 type Props = {
-  targetType: "deal" | "merchant";
+  targetType: "deal" | "merchant" | "message";
   targetId: string;
   userId: string | null | undefined;
   className?: string;
@@ -70,7 +70,9 @@ export function ReportButton({ targetType, targetId, userId, className, iconOnly
     const payload =
       targetType === "deal"
         ? { deal_id: targetId, target_type: "deal" as const }
-        : { merchant_id: targetId, target_type: "merchant" as const };
+        : targetType === "merchant"
+          ? { merchant_id: targetId, target_type: "merchant" as const }
+          : { message_id: targetId, target_type: "message" as const };
 
     const { error: insertError } = await supabase.from("reports").insert({
       reporter_id: userId,

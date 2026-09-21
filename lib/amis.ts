@@ -119,12 +119,27 @@ export async function relationAvec(moi: string, cible: string): Promise<Relation
 }
 
 export async function rechercherUtilisateurs(terme: string, moi: string) {
-  const { data, error } = await supabase
+  // Les comptes qu'on a soi-même bloqués sont exclus : les revoir dans une
+  // recherche viderait le geste de son sens. La réciproque (avoir été
+  // bloqué par l'autre) reste invisible par conception — la demande
+  // échouerait silencieusement si on tentait quand même.
+  const { data: blocages } = await supabase
+    .from("blocked_users")
+    .select("blocked_id")
+    .eq("blocker_id", moi);
+
+  const exclus = (blocages ?? []).map((b) => b.blocked_id);
+
+  let query = supabase
     .from("users")
     .select("id, pseudo, avatar_url")
     .ilike("pseudo", `%${terme}%`)
     .neq("id", moi)
     .limit(10);
+
+  if (exclus.length > 0) query = query.not("id", "in", `(${exclus.join(",")})`);
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data ?? [];
