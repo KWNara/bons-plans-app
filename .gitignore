@@ -27,3 +27,9 @@ npm-debug.log*
 
 # Fichiers temporaires du CLI Supabase
 supabase/.temp/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
