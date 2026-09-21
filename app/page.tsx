@@ -174,7 +174,11 @@ export default function Home() {
       )
       .eq("statut", "publie")
       .eq("deal_cities.city_id", selectedCity.id)
-      .or(`date_fin.is.null,date_fin.gt.${new Date().toISOString()}`);
+      .or(`date_fin.is.null,date_fin.gt.${new Date().toISOString()}`)
+      // Une annonce programmée pour plus tard ne doit apparaître qu'à partir
+      // de sa date de début : la policy RLS l'impose déjà, ce filtre évite en
+      // plus de la récupérer pour rien.
+      .or(`date_debut.is.null,date_debut.lte.${new Date().toISOString()}`);
 
     if (categoryId) query = query.eq("category_id", categoryId);
 

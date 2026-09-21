@@ -9,7 +9,7 @@ import { FormInput, FormTextarea, FormSelect } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { endOfDayIso, startOfDayIso } from "@/lib/dealFormat";
+import { echapperIlike, endOfDayIso, startOfDayIso } from "@/lib/dealFormat";
 
 type Category = { id: string; nom: string };
 type MerchantCity = { city_id: string; cities: { nom: string; code_postal: string } | null };
@@ -142,7 +142,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
         .from("deals")
         .select("id, deal_cities!inner(city_id)")
         .eq("merchant_id", merchantId)
-        .ilike("titre", titre.trim())
+        .ilike("titre", echapperIlike(titre.trim()))
         .in("deal_cities.city_id", selectedCityIds)
         .limit(1);
 
@@ -260,7 +260,18 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       return;
     }
 
+    // Chemins de CETTE soumission uniquement : en cas d'échec plus loin (une
+    // autre photo, l'insertion du deal, l'enregistrement des villes), ils
+    // sont retirés du stockage plutôt que laissés orphelins indéfiniment dans
+    // un bucket public.
+    const uploadedPaths: string[] = [];
     const uploadedUrls: string[] = [];
+
+    async function nettoyerPhotosEnvoyees() {
+      if (uploadedPaths.length === 0) return;
+      await supabase.storage.from("deal-photos").remove(uploadedPaths);
+    }
+
     for (const file of photoFiles) {
       const path = `${user.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
@@ -270,10 +281,12 @@ export function DealForm({ merchantId, existingDeal }: Props) {
         // Le reste du fichier traduit systématiquement les messages serveur ;
         // celui-ci laissait passer de l'anglais technique jusqu'à l'écran.
         console.error(uploadError);
+        await nettoyerPhotosEnvoyees();
         setError("Une photo n'a pas pu être envoyée. Vérifie son format et sa taille, puis réessaie.");
         setLoading(null);
         return;
       }
+      uploadedPaths.push(path);
       uploadedUrls.push(supabase.storage.from("deal-photos").getPublicUrl(path).data.publicUrl);
     }
 
@@ -300,6 +313,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
       : await supabase.from("deals").insert(payload).select().single();
 
     if (dealResult.error) {
+      await nettoyerPhotosEnvoyees();
       setError(humanizeDealError(dealResult.error.message));
       setLoading(null);
       return;
@@ -319,16 +333,37 @@ export function DealForm({ merchantId, existingDeal }: Props) {
 
     if (citiesError) {
       setLoading(null);
-      setError("Les villes de diffusion n'ont pas pu être enregistrées. Réessaie.");
+      if (isEdit) {
+        // L'annonce existait déjà avant cette modification : elle reste, avec
+        // son ancienne diffusion. Rien à annuler côté deal, seul l'ajout de
+        // nouvelles villes a échoué.
+        setError("Les villes de diffusion n'ont pas pu être enregistrées. Réessaie.");
+      } else {
+        // Sans ce nettoyage, l'annonce restait publiée sans aucune ville :
+        // invisible dans tous les fils, mais comptant quand même dans le
+        // quota — et un nouveau clic sur « Publier » en créait une seconde
+        // au lieu de corriger la première (rien ne mémorise l'id créé ici).
+        await supabase.from("deals").delete().eq("id", dealId);
+        await nettoyerPhotosEnvoyees();
+        setError("La publication a échoué : villes de diffusion invalides. Réessaie.");
+      }
       return;
     }
 
     if (isEdit) {
-      await supabase
+      const { error: purgeError } = await supabase
         .from("deal_cities")
         .delete()
         .eq("deal_id", dealId)
         .not("city_id", "in", `(${selectedCityIds.join(",")})`);
+
+      if (purgeError) {
+        setLoading(null);
+        setError(
+          "L'annonce est enregistrée, mais retirer d'anciennes villes de diffusion a échoué. Vérifie et réessaie."
+        );
+        return;
+      }
     }
 
     setLoading(null);
@@ -432,6 +467,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
         <div className="grid grid-cols-2 gap-2 mb-2">
           <button
             type="button"
+            aria-pressed={priceMode === "prix"}
             onClick={() => setPriceMode("prix")}
             className={`press flex items-center justify-center gap-1.5 rounded-control border py-2 text-sm font-medium transition-colors ${
               priceMode === "prix" ? "border-teal bg-teal/10 text-teal" : "border-ink/15 text-ink/60"
@@ -441,6 +477,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
           </button>
           <button
             type="button"
+            aria-pressed={priceMode === "pourcentage"}
             onClick={() => setPriceMode("pourcentage")}
             className={`press flex items-center justify-center gap-1.5 rounded-control border py-2 text-sm font-medium transition-colors ${
               priceMode === "pourcentage" ? "border-teal bg-teal/10 text-teal" : "border-ink/15 text-ink/60"
@@ -463,7 +500,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="20,00"
+                placeholder="20.00"
                 value={prixAvant}
                 onChange={(e) => setPrixAvant(e.target.value)}
                 className="mt-1.5 w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
@@ -477,7 +514,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="14,00"
+                placeholder="14.00"
                 value={prixApres}
                 onChange={(e) => setPrixApres(e.target.value)}
                 className="mt-1.5 w-full rounded-control border border-ink/15 px-3 py-2.5 text-sm focus:border-teal"
@@ -522,6 +559,7 @@ export function DealForm({ merchantId, existingDeal }: Props) {
               <button
                 type="button"
                 key={mc.city_id}
+                aria-pressed={active}
                 onClick={() => toggleCity(mc.city_id)}
                 className={`press rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                   active ? "bg-contrast text-white border-contrast" : "bg-surface text-ink/70 border-ink/15"

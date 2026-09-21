@@ -1,3 +1,11 @@
+// `%` et `_` sont des jokers en ILIKE : un titre contenant un pourcentage
+// ("-20%", très courant sur un bon plan) transformait silencieusement une
+// recherche de doublon en motif partiel, faisant remonter des annonces sans
+// rapport comme de faux doublons.
+export function echapperIlike(valeur: string): string {
+  return valeur.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 export function discountLabel(deal: {
   reduction_pourcentage: number | null;
   prix_avant: number | null;

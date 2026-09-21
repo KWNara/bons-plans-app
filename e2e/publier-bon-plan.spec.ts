@@ -5,6 +5,8 @@ import {
   creerMerchant,
   recupererVille,
   ajouterVilleDiffusion,
+  retirerVilleDiffusion,
+  compterDealsAvecTitre,
   supprimerComptes,
   type CompteTest,
 } from "./fixtures/donnees";
@@ -77,5 +79,48 @@ test.describe("Publier un bon plan", () => {
     await expect(page.getByText(titre)).toBeVisible();
 
     await contexte.close();
+  });
+
+  test("une ville de diffusion retirée pendant la saisie n'aboutit pas à une annonce fantôme", async ({
+    browser,
+  }) => {
+    // Reproduit exactement la course trouvée par l'audit : le formulaire a
+    // déjà chargé ses villes en mémoire quand un autre onglet en retire une —
+    // avant ce correctif, deals.insert() réussissait quand même et laissait
+    // une annonce publiée sans aucune ville, invisible partout mais comptant
+    // dans le quota.
+    const commercant2 = await creerCompte("CommercantCourse");
+    const merchant2Id = await creerMerchant(commercant2.id, "Boutique course Playwright");
+    const ville2 = await recupererVille();
+    await ajouterVilleDiffusion(merchant2Id, ville2.id);
+
+    const contexte = await browser.newContext({ storageState: commercant2.storageState });
+    const page = await contexte.newPage();
+    const titre = `Annonce fantome ${Date.now()}`;
+
+    try {
+      await page.goto("/bons-plans/nouveau");
+      await page.getByLabel("Titre").fill(titre);
+      await page
+        .getByRole("group", { name: "Villes de diffusion" })
+        .getByRole("button", { name: new RegExp(ville2.nom) })
+        .click();
+
+      // Le formulaire garde la ville cochée en mémoire ; côté base, elle
+      // vient d'être retirée par « un autre onglet ».
+      await retirerVilleDiffusion(merchant2Id, ville2.id);
+
+      await page.getByRole("button", { name: "Publier" }).click();
+
+      await expect(
+        page.getByText("La publication a échoué : villes de diffusion invalides. Réessaie.")
+      ).toBeVisible();
+      await expect(page).toHaveURL(/\/bons-plans\/nouveau/);
+
+      expect(await compterDealsAvecTitre(merchant2Id, titre)).toBe(0);
+    } finally {
+      await contexte.close();
+      await supprimerComptes(commercant2.id);
+    }
   });
 });

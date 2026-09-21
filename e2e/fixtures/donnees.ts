@@ -178,6 +178,26 @@ export async function ajouterVilleDiffusion(merchantId: string, cityId: string) 
   });
 }
 
+/** Retire une ville de diffusion — simule, côté base, ce qu'un second onglet
+ * ferait pendant qu'un formulaire de publication est déjà rempli. */
+export async function retirerVilleDiffusion(merchantId: string, cityId: string) {
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/merchant_cities?merchant_id=eq.${merchantId}&city_id=eq.${cityId}`,
+    { method: "DELETE", headers: hs }
+  );
+}
+
+/** Nombre d'annonces d'un commerçant portant exactement ce titre — utilisé
+ * pour prouver l'ABSENCE d'une annonce fantôme après un échec attendu. */
+export async function compterDealsAvecTitre(merchantId: string, titre: string): Promise<number> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/deals?select=id&merchant_id=eq.${merchantId}&titre=eq.${encodeURIComponent(titre)}`,
+    { headers: hs }
+  );
+  const lignes = await res.json();
+  return lignes.length;
+}
+
 /** Publie un bon plan directement en base : la publication via le vrai
  * formulaire est son propre sujet, distinct de ce que ces specs vérifient. */
 export async function creerDealPublie(merchantId: string, titre: string): Promise<string> {

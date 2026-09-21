@@ -62,7 +62,10 @@ export default function CartePage() {
           )
           .eq("statut", "publie")
           .eq("deal_cities.city_id", selectedCity.id)
-          .or(`date_fin.is.null,date_fin.gt.${new Date().toISOString()}`),
+          .or(`date_fin.is.null,date_fin.gt.${new Date().toISOString()}`)
+          // Cf. app/page.tsx : la policy RLS suffit à la sécurité, ce filtre
+          // évite juste de récupérer une annonce pas encore commencée.
+          .or(`date_debut.is.null,date_debut.lte.${new Date().toISOString()}`),
       ]);
 
     if (erreurVille || erreurDeals) {

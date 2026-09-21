@@ -2,12 +2,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   compteARebours,
   discountLabel,
+  echapperIlike,
   endOfDayIso,
   estFlash,
   formatTimeRemaining,
   isExpired,
   startOfDayIso,
 } from "./dealFormat";
+
+describe("echapperIlike", () => {
+  it("échappe le pourcentage, joker ILIKE le plus courant dans un titre de bon plan", () => {
+    expect(echapperIlike("Soldes -50% aujourd'hui")).toBe("Soldes -50\\% aujourd'hui");
+  });
+
+  it("échappe le tiret bas", () => {
+    expect(echapperIlike("Menu_du_jour")).toBe("Menu\\_du\\_jour");
+  });
+
+  it("échappe l'antislash lui-même, pour ne pas casser l'échappement suivant", () => {
+    expect(echapperIlike("Prix\\Qualité")).toBe("Prix\\\\Qualité");
+  });
+
+  it("laisse un titre sans caractère spécial inchangé", () => {
+    expect(echapperIlike("Menu du midi")).toBe("Menu du midi");
+  });
+});
 
 describe("estFlash", () => {
   const maintenant = new Date("2026-09-21T12:00:00Z").getTime();

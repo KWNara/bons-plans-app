@@ -338,8 +338,20 @@ try {
   $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercantNonVerifie.h -Body (@{ merchant_id = $merchantNonVerifieId; titre = "Annonce non verifiee $suffixe"; statut = "publie" } | ConvertTo-Json) }
   Verifier "Un commercant non verifie ne peut pas publier" 42501 (CodeErreur $r)
 
-  # Quota du plan gratuit : 3 annonces actives passent, la 4e est refusee.
-  for ($i = 1; $i -le 3; $i++) {
+  # date_debut ne doit avoir aucun effet sur la visibilite avant elle-meme :
+  # une annonce programmee pour plus tard reste invisible publiquement tant
+  # que sa date de debut n'est pas atteinte, mais son proprietaire la voit
+  # toujours (pour la retrouver dans "Mes bons plans").
+  $dealFutur = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $hsRep -Body (@{ merchant_id = $merchantId; titre = "Bon plan quota 1 $suffixe"; statut = "publie"; date_debut = (Get-Date).AddDays(5).ToString("o") } | ConvertTo-Json)
+  $dealFuturId = $dealFutur[0].id
+  $visiblePublic = Invoke-RestMethod -Uri "$url/rest/v1/deals?select=id&id=eq.$dealFuturId" -Headers $victime.h
+  Verifier "Une annonce a date de debut future reste invisible publiquement" 0 $visiblePublic.Count
+  $visibleProprietaire = Invoke-RestMethod -Uri "$url/rest/v1/deals?select=id&id=eq.$dealFuturId" -Headers $commercant.h
+  Verifier "...mais reste visible pour son proprietaire" 1 $visibleProprietaire.Count
+
+  # Quota du plan gratuit : 3 annonces actives passent (dealFutur en fait
+  # deja partie), la 4e est refusee.
+  for ($i = 2; $i -le 3; $i++) {
     Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercant.h -Body (@{ merchant_id = $merchantId; titre = "Bon plan quota $i $suffixe"; statut = "publie" } | ConvertTo-Json) | Out-Null
   }
   $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercant.h -Body (@{ merchant_id = $merchantId; titre = "Bon plan quota 4 $suffixe"; statut = "publie" } | ConvertTo-Json) }
@@ -366,6 +378,55 @@ try {
   # dossier (la politique RLS d'ecriture, elle, est respectee).
   $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/storage/v1/object/deal-photos/$($commercant.id)/pirate.txt" -Headers @{ apikey = $anon; Authorization = $commercant.h.Authorization } -ContentType "text/plain" -Body "contenu arbitraire" }
   Verifier "Un fichier hors image est refuse au stockage" 400 (CodeErreur $r)
+
+  # Retirer une ville de diffusion doit purger les deal_cities existants pour
+  # cette ville : sans ca, une annonce restait diffusee dans une ville que le
+  # commercant venait explicitement de quitter, sans aucun moyen de l'en
+  # retirer depuis le formulaire (qui ne propose plus que les villes encore
+  # enregistrees).
+  $mcVilleA = Invoke-RestMethod -Uri "$url/rest/v1/merchant_cities?select=id&merchant_id=eq.$merchantId&city_id=eq.$villeA" -Headers $hs
+  Invoke-RestMethod -Method Delete -Uri "$url/rest/v1/merchant_cities?id=eq.$($mcVilleA[0].id)" -Headers $commercant.h | Out-Null
+  $diffusionApresRetrait = Invoke-RestMethod -Uri "$url/rest/v1/deal_cities?select=id&deal_id=eq.$premierDeal" -Headers $hs
+  Verifier "Retirer une ville de diffusion purge les deal_cities existants" 0 $diffusionApresRetrait.Count
+
+  # =========================================================================
+  Write-Host "`nQuota : course entre deux publications concurrentes" -ForegroundColor Cyan
+  # =========================================================================
+  # Sans verrou, deux publications lancees au meme instant lisent chacune le
+  # meme compte avant que l'autre ne committe et passent toutes les deux sous
+  # la barre de 3. Un second commercant, isole du premier, part avec
+  # exactement 2 annonces actives puis tente d'en publier 2 de plus en
+  # parallele : une seule doit reussir.
+  $commercantCourse = Creer "QaCourse$suffixe" "qa-course-$suffixe@example.com" $null
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/users?id=eq.$($commercantCourse.id)" -Headers $hs -Body '{"role":"commercant"}' | Out-Null
+  $merchantCourse = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_profiles" -Headers $hsRep -Body (@{ user_id = $commercantCourse.id; nom_enseigne = "QA Course $suffixe"; statut_verification = "verifie" } | ConvertTo-Json)
+  $merchantCourseId = $merchantCourse[0].id
+  Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_cities" -Headers $hs -Body (@{ merchant_id = $merchantCourseId; city_id = $villeA } | ConvertTo-Json) | Out-Null
+
+  for ($i = 1; $i -le 2; $i++) {
+    Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $commercantCourse.h -Body (@{ merchant_id = $merchantCourseId; titre = "Bon plan course $i $suffixe"; statut = "publie" } | ConvertTo-Json) | Out-Null
+  }
+
+  $coursePublish = {
+    param($url, $auth, $anon, $merchantId, $titre)
+    try {
+      Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers @{ apikey = $anon; Authorization = $auth; "Content-Type" = "application/json" } -Body (@{ merchant_id = $merchantId; titre = $titre; statut = "publie" } | ConvertTo-Json) | Out-Null
+      "ok"
+    } catch {
+      "refuse"
+    }
+  }
+
+  $jobA = Start-Job -ScriptBlock $coursePublish -ArgumentList $url, $commercantCourse.h.Authorization, $anon, $merchantCourseId, "Course concurrente A $suffixe"
+  $jobB = Start-Job -ScriptBlock $coursePublish -ArgumentList $url, $commercantCourse.h.Authorization, $anon, $merchantCourseId, "Course concurrente B $suffixe"
+  $resultatsCourse = @($jobA, $jobB) | Wait-Job | Receive-Job
+  Remove-Job $jobA, $jobB
+
+  $succesCourse = ($resultatsCourse | Where-Object { $_ -eq "ok" }).Count
+  Verifier "Exactement une des deux publications concurrentes reussit" 1 $succesCourse
+
+  $actifsApresCourse = (Invoke-RestMethod -Uri "$url/rest/v1/deals?select=id&merchant_id=eq.$merchantCourseId&statut=eq.publie" -Headers $hs).Count
+  Verifier "Le total actif reste a 3 apres la course, jamais 4" 3 $actifsApresCourse
 
 } finally {
   # =========================================================================
