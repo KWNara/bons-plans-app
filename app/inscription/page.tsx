@@ -10,6 +10,7 @@ import { FormInput } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { authErrorMessage } from "@/lib/authErrors";
+import { erreurPseudo, PSEUDO_MAX } from "@/lib/pseudo";
 
 // `useSearchParams` interdit le pré-rendu statique de la page entière : sans
 // cette frontière, la compilation échoue sur « missing suspense with CSR
@@ -55,6 +56,17 @@ function FormulaireInscription() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Le pseudo est ce par quoi les autres citeront la personne : un pseudo que
+    // l'analyseur de mentions ne sait pas relire entier la rendrait
+    // silencieusement incitable. La base pose la même règle, celle-ci n'est là
+    // que pour l'expliquer avant l'échec.
+    const probleme = erreurPseudo(pseudo);
+    if (probleme) {
+      setError(probleme);
+      return;
+    }
+
     setLoading(true);
 
     const { data, error: signUpError } = await supabase.auth.signUp({
@@ -129,6 +141,7 @@ function FormulaireInscription() {
           label="Pseudo"
           type="text"
           required
+          maxLength={PSEUDO_MAX}
           value={pseudo}
           onChange={(e) => setPseudo(e.target.value)}
         />
