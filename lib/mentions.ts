@@ -15,7 +15,11 @@
 // « contact@exemple.fr » était lu comme une mention de « exemple.fr ». Il est
 // capturé plutôt qu'écrit en arrière-vérification, que Safari n'a su lire
 // qu'à partir de la version 16.4.
-const MOTIF_MENTION = /(^|[\s(])@([\p{L}\p{N}][\p{L}\p{N}_.-]{1,29})/gu;
+// Le pseudo doit aussi SE TERMINER par un caractère alphanumérique : sans ce
+// dernier groupe, « Merci @lea. » extrayait « lea. », qui ne correspond à
+// personne — ni lien, ni notification, et pas la moindre erreur pour le dire.
+// Les points internes restent intacts, « jean.dupont » est toujours citable.
+const MOTIF_MENTION = /(^|[\s(])@([\p{L}\p{N}][\p{L}\p{N}_.-]{0,28}[\p{L}\p{N}])/gu;
 
 export type Segment =
   | { type: "texte"; valeur: string }

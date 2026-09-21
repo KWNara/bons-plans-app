@@ -22,6 +22,24 @@ describe("extraireMentions", () => {
     expect(extraireMentions("on y va @sam, non ?")).toEqual(["sam"]);
   });
 
+  // Le point est un caractère valide DANS un pseudo, mais pas à sa fin : sans
+  // cette distinction, « Merci @lea. » citait un « lea. » qui n'existe pas, et
+  // l'échec était parfaitement muet — ni lien, ni notification, ni erreur.
+  it("ne mange pas le point final d'une phrase", () => {
+    expect(extraireMentions("Merci @lea.")).toEqual(["lea"]);
+    expect(extraireMentions("bravo @lea...")).toEqual(["lea"]);
+    expect(extraireMentions("Bravo @lea ! Et toi @noe.")).toEqual(["lea", "noe"]);
+  });
+
+  it("garde les points à l'intérieur d'un pseudo", () => {
+    expect(extraireMentions("coucou @jean.dupont")).toEqual(["jean.dupont"]);
+    expect(extraireMentions("coucou @jean.dupont.")).toEqual(["jean.dupont"]);
+  });
+
+  it("ne garde pas un tiret final", () => {
+    expect(extraireMentions("salut @lea-")).toEqual(["lea"]);
+  });
+
   it("dédoublonne sans tenir compte de la casse", () => {
     expect(extraireMentions("@lea puis @LEA puis @Lea")).toEqual(["lea"]);
   });

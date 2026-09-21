@@ -35,20 +35,22 @@ function FormulaireInscription() {
   const [loading, setLoading] = useState(false);
   const [confirmationPending, setConfirmationPending] = useState(false);
 
-  // Le lien de parrainage ne transporte qu'un identifiant : on va chercher le
-  // pseudo pour que le filleul voie qui l'invite. Un identifiant inconnu ne
-  // bloque rien, l'inscription se poursuit sans parrain.
+  // L'identifiant vient de l'URL, directement. La requête ci-dessous n'est là
+  // que pour AFFICHER le pseudo : en faisant dépendre l'envoi de son succès, une
+  // panne réseau ou une simple lenteur faisait perdre le parrainage en silence.
+  // La base revalide de toute façon l'identifiant à l'inscription.
+  const idParrain = params.get("parrain");
+
   useEffect(() => {
-    const id = params.get("parrain");
-    if (!id) return;
+    if (!idParrain) return;
 
     supabase
       .from("users")
       .select("id, pseudo")
-      .eq("id", id)
+      .eq("id", idParrain)
       .maybeSingle()
       .then(({ data }) => setParrain(data ?? null));
-  }, [params]);
+  }, [idParrain]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,9 +62,9 @@ function FormulaireInscription() {
       password,
       options: {
         // Le parrain passe par les métadonnées d'inscription : c'est le
-        // déclencheur `handle_new_user` qui le valide et l'enregistre, côté
-        // base. Un identifiant forgé n'a donc aucun effet.
-        data: parrain ? { pseudo, parrain: parrain.id } : { pseudo },
+        // déclencheur `handle_new_user` qui le valide côté base. Un identifiant
+        // inconnu ou malformé y est ignoré, sans faire échouer l'inscription.
+        data: idParrain ? { pseudo, parrain: idParrain } : { pseudo },
         emailRedirectTo: `${window.location.origin}/compte`,
       },
     });
@@ -113,8 +115,11 @@ function FormulaireInscription() {
         <p className="mb-4 flex items-start gap-2.5 rounded-control border border-marigold/40 bg-marigold/15 px-3.5 py-2.5 text-sm text-ink">
           <Gift size={16} className="text-marigold shrink-0 mt-0.5" />
           <span>
+            {/* Tournure sans genre : on ne sait rien de la personne qui invite.
+                Et c'est bien le filleul qui demande — poser la demande au nom
+                du parrain ouvrait une faille (cf. 20260922010000). */}
             <strong className="font-semibold">{parrain.pseudo}</strong> t&apos;invite sur Déniche.
-            Tu le retrouveras dans tes demandes d&apos;amis dès ton inscription.
+            Une demande d&apos;ami lui sera envoyée dès ton inscription.
           </span>
         </p>
       )}

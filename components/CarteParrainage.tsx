@@ -16,6 +16,7 @@ type Props = { userId: string };
  */
 export function CarteParrainage({ userId }: Props) {
   const [filleuls, setFilleuls] = useState<number | null>(null);
+  const [erreurCompte, setErreurCompte] = useState(false);
   const [lien, setLien] = useState("");
   const [copie, setCopie] = useState(false);
   // Les composants clients sont tout de même rendus côté serveur : lire
@@ -28,9 +29,15 @@ export function CarteParrainage({ userId }: Props) {
     setLien(`${window.location.origin}/inscription?parrain=${userId}`);
     setPartageNatif(typeof navigator !== "undefined" && Boolean(navigator.share));
 
-    supabase
-      .rpc("compte_filleuls", { p_parrain: userId })
-      .then(({ data }) => setFilleuls(typeof data === "number" ? data : null));
+    // `null` sert déjà d'état de chargement : sans lire l'erreur, une panne
+    // s'y confondait et se présentait comme un état neutre définitif.
+    supabase.rpc("compte_filleuls", { p_parrain: userId }).then(({ data, error }) => {
+      if (error) {
+        setErreurCompte(true);
+        return;
+      }
+      setFilleuls(typeof data === "number" ? data : 0);
+    });
   }, [userId]);
 
   async function partager() {
@@ -66,11 +73,13 @@ export function CarteParrainage({ userId }: Props) {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-ink">Invite tes amis</p>
           <p className="text-sm text-ink/70">
-            {filleuls === null
-              ? "Ils te retrouveront dans leurs demandes d'amis."
-              : filleuls === 0
-                ? "Personne n'est encore venu par ton lien."
-                : `${filleuls} ${filleuls > 1 ? "personnes sont venues" : "personne est venue"} par ton lien.`}
+            {erreurCompte
+              ? "Compteur indisponible pour le moment."
+              : filleuls === null
+                ? "Leur demande d'ami t'arrivera dès leur inscription."
+                : filleuls === 0
+                  ? "Personne n'est encore venu par ton lien."
+                  : `${filleuls} ${filleuls > 1 ? "personnes sont venues" : "personne est venue"} par ton lien.`}
           </p>
         </div>
       </div>
