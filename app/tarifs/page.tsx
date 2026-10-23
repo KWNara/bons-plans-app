@@ -25,6 +25,7 @@ export default function TarifsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dejaAbonne, setDejaAbonne] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<Plan>(null);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function TarifsPage() {
 
   async function handleSubscribe() {
     setError(null);
+    setDejaAbonne(false);
     setLoading(true);
 
     const {
@@ -55,20 +57,27 @@ export default function TarifsPage() {
       return;
     }
 
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
-    const body = await res.json();
+    // Une réponse non JSON (panne, coupure réseau) laissait le bouton bloqué
+    // sur « ... » sans aucun message : setLoading(false) n'était jamais atteint.
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json();
 
-    setLoading(false);
+      if (!res.ok) {
+        setError(body.error ?? "Une erreur est survenue.");
+        setDejaAbonne(Boolean(body.alreadySubscribed));
+        return;
+      }
 
-    if (!res.ok) {
-      setError(body.error ?? "Une erreur est survenue.");
-      return;
+      window.location.href = body.url;
+    } catch {
+      setError("Le paiement est momentanément indisponible. Vérifie ta connexion et réessaie.");
+    } finally {
+      setLoading(false);
     }
-
-    window.location.href = body.url;
   }
 
   return (
@@ -135,7 +144,19 @@ export default function TarifsPage() {
               ))}
             </ul>
 
-            {error && <p className="text-tag text-sm mb-3">{error}</p>}
+            {error && (
+              <p className="text-tag text-sm mb-3">
+                {error}
+                {dejaAbonne && (
+                  <>
+                    {" "}
+                    <Link href="/mon-abonnement" className="font-semibold underline">
+                      Voir mon abonnement
+                    </Link>
+                  </>
+                )}
+              </p>
+            )}
 
             {currentPlan === "payant" ? (
               <Link

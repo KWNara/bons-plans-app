@@ -433,6 +433,44 @@ try {
   $actifsApresCourse = (Invoke-RestMethod -Uri "$url/rest/v1/deals?select=id&merchant_id=eq.$merchantCourseId&statut=eq.publie" -Headers $hs).Count
   Verifier "Le total actif reste a 3 apres la course, jamais 4" 3 $actifsApresCourse
 
+  # =========================================================================
+  Write-Host "`nQuota apres resiliation : pas de prolongation au-dela" -ForegroundColor Cyan
+  # =========================================================================
+  # Un commercant Pro publie 4 annonces, puis resilie : il revient au plan
+  # gratuit avec 4 annonces actives. Elles restent en ligne (on ne depublie
+  # jamais dans son dos), mais il ne doit pas pouvoir les prolonger sans fin :
+  # un mois de Pro donnait sinon des emplacements illimites pour toujours.
+  $resilie = Creer "QaResilie$suffixe" "qa-resilie-$suffixe@example.com" $null
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/users?id=eq.$($resilie.id)" -Headers $hs -Body '{"role":"commercant"}' | Out-Null
+  $merchantResilie = (Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_profiles" -Headers $hsRep -Body (@{ user_id = $resilie.id; nom_enseigne = "QA Resilie $suffixe"; statut_verification = "verifie"; plan = "payant" } | ConvertTo-Json))[0].id
+  $dealDate = (Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $hsRep -Body (@{ merchant_id = $merchantResilie; titre = "Resilie 1 $suffixe"; statut = "publie"; date_fin = (Get-Date).AddDays(5).ToUniversalTime().ToString("o") } | ConvertTo-Json))[0].id
+  for ($i = 2; $i -le 4; $i++) {
+    Invoke-RestMethod -Method Post -Uri "$url/rest/v1/deals" -Headers $hs -Body (@{ merchant_id = $merchantResilie; titre = "Resilie $i $suffixe"; statut = "publie" } | ConvertTo-Json) | Out-Null
+  }
+  Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/merchant_profiles?id=eq.$merchantResilie" -Headers $hs -Body '{"plan":"gratuit"}' | Out-Null
+
+  $r = Appel { Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/deals?id=eq.$dealDate" -Headers $resilie.h -Body (@{ date_fin = (Get-Date).AddDays(60).ToUniversalTime().ToString("o") } | ConvertTo-Json) }
+  Verifier "Au-dela du quota, une annonce active ne se prolonge pas" "P0001" (CodeErreur $r)
+
+  $r = Appel { Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/deals?id=eq.$dealDate" -Headers $resilie.h -Body '{"date_fin":null}' }
+  Verifier "...ni ne devient permanente" "P0001" (CodeErreur $r)
+
+  $r = Appel { Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/deals?id=eq.$dealDate" -Headers $resilie.h -Body (@{ titre = "Resilie corrige $suffixe" } | ConvertTo-Json) }
+  $titreApres = (Invoke-RestMethod -Uri "$url/rest/v1/deals?select=titre&id=eq.$dealDate" -Headers $hs)[0].titre
+  Verifier "Corriger une annonce active reste permis" "Resilie corrige $suffixe" $titreApres
+
+  # =========================================================================
+  Write-Host "`nAbonnement : statut de paiement prive" -ForegroundColor Cyan
+  # =========================================================================
+  $abo = Invoke-RestMethod -Method Post -Uri "$url/rest/v1/rpc/mon_abonnement" -Headers $resilie.h -Body '{}'
+  Verifier "Un commercant lit son propre abonnement" "gratuit" $abo[0].plan
+
+  $r = Appel { Invoke-RestMethod -Method Post -Uri "$url/rest/v1/rpc/mon_abonnement" -Headers @{ apikey = $anon; "Content-Type" = "application/json" } -Body '{}' }
+  Verifier "Un visiteur ne lit aucun abonnement" 42501 (CodeErreur $r)
+
+  $r = Appel { Invoke-RestMethod -Uri "$url/rest/v1/merchant_profiles?select=stripe_subscription_status&limit=1" -Headers @{ apikey = $anon } }
+  Verifier "Le statut de paiement d'un commercant n'est pas public" 42501 (CodeErreur $r)
+
 } finally {
   # =========================================================================
   Write-Host "`nMenage" -ForegroundColor Cyan

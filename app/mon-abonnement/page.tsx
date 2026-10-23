@@ -8,12 +8,20 @@ import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { STATUTS_EN_COURS } from "@/lib/abonnement";
 
+// Lu via la fonction mon_abonnement() : ces colonnes ne sont plus lisibles
+// directement, le statut de paiement d'un commerçant ne regardant que lui.
 type Merchant = {
   plan: "gratuit" | "payant";
-  stripe_subscription_status: string | null;
-  subscription_current_period_end: string | null;
+  statut: string | null;
+  fin_de_periode: string | null;
+  fin_programmee: string | null;
 };
+
+function dateLongue(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
 
 // Le statut brut de Stripe ne doit jamais s'afficher tel quel à un commerçant.
 const STATUS_LABELS: Record<string, string> = {
@@ -55,6 +63,7 @@ function MonAbonnementContent() {
   // arriver. On attend l'activation au lieu d'afficher « Gratuit / Passer en
   // Pro », ce qui pousserait le commerçant à payer une seconde fois.
   const [awaitingActivation, setAwaitingActivation] = useState(justPaid);
+  const [activationEnRetard, setActivationEnRetard] = useState(false);
 
   const load = useCallback(async () => {
     const {
@@ -66,16 +75,14 @@ function MonAbonnementContent() {
       return null;
     }
 
-    const { data, error: loadError } = await supabase
-      .from("merchant_profiles")
-      .select("plan, stripe_subscription_status, subscription_current_period_end")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data: lignes, error: loadError } = await supabase.rpc("mon_abonnement");
 
     if (loadError) {
       setState("error");
       return null;
     }
+
+    const data = (lignes as Merchant[] | null)?.[0];
 
     if (!data) {
       router.push("/compte");
@@ -84,7 +91,7 @@ function MonAbonnementContent() {
 
     setMerchant(data);
     setState("ready");
-    return data as Merchant;
+    return data;
   }, [router]);
 
   useEffect(() => {
@@ -103,10 +110,14 @@ function MonAbonnementContent() {
 
       if (cancelled) return;
 
-      // On abandonne au bout de ~30 s : le webhook a probablement échoué, et
-      // laisser tourner indéfiniment donnerait l'illusion d'un chargement.
-      if (data?.plan === "payant" || attempts >= 10) {
+      // On abandonne au bout de ~30 s : laisser tourner indéfiniment donnerait
+      // l'illusion d'un chargement. Mais le paiement, lui, a bien eu lieu : on
+      // ne repropose surtout pas « Passer en Pro ».
+      if (data?.plan === "payant") {
         setAwaitingActivation(false);
+      } else if (attempts >= 10) {
+        setAwaitingActivation(false);
+        setActivationEnRetard(true);
       }
     }, 3000);
 
@@ -151,9 +162,11 @@ function MonAbonnementContent() {
 
   const isPro = merchant?.plan === "payant";
   const statusMessage =
-    merchant?.stripe_subscription_status && merchant.stripe_subscription_status !== "active"
-      ? STATUS_LABELS[merchant.stripe_subscription_status]
-      : null;
+    merchant?.statut && merchant.statut !== "active" ? STATUS_LABELS[merchant.statut] : null;
+  // Un abonnement impayé, incomplet ou en pause n'ouvre pas le Pro, mais il
+  // existe toujours : sans accès au portail, le seul bouton proposé était
+  // « Passer en Pro », qui créait un second abonnement.
+  const abonnementEnCours = !!merchant?.statut && STATUTS_EN_COURS.includes(merchant.statut);
 
   return (
     <main className="min-h-screen bg-paper px-4 pt-4 pb-16">
@@ -197,6 +210,16 @@ function MonAbonnementContent() {
               </div>
             )}
 
+            {activationEnRetard && !isPro && (
+              <div className="flex items-start gap-2.5 bg-marigold/15 border border-marigold/40 rounded-control px-4 py-3 mb-4">
+                <AlertCircle size={16} className="text-tag shrink-0 mt-0.5" />
+                <p className="text-sm text-ink leading-relaxed">
+                  Ton paiement est bien reçu, mais l&apos;activation prend plus de temps que prévu.{" "}
+                  <strong>Ne repaie pas</strong> : reviens sur cette page dans quelques minutes.
+                </p>
+              </div>
+            )}
+
             <div
               className={`rounded-card p-5 mb-4 shadow-soft ${
                 isPro ? "bg-gradient-to-br from-contrast to-contrast/80 text-white" : "bg-surface border border-ink/10"
@@ -219,16 +242,19 @@ function MonAbonnementContent() {
                 <p className="text-sm text-ink/70 mb-1">Jusqu&apos;à 3 bons plans actifs simultanément.</p>
               )}
 
-              {isPro && merchant?.subscription_current_period_end && (
+              {isPro && merchant?.fin_programmee ? (
                 <p className="flex items-center gap-1.5 text-sm text-white/80">
                   <CalendarClock size={14} />
-                  Renouvellement le{" "}
-                  {new Date(merchant.subscription_current_period_end).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  Résilié : ton Pro se termine le {dateLongue(merchant.fin_programmee)}
                 </p>
+              ) : (
+                isPro &&
+                merchant?.fin_de_periode && (
+                  <p className="flex items-center gap-1.5 text-sm text-white/80">
+                    <CalendarClock size={14} />
+                    Renouvellement le {dateLongue(merchant.fin_de_periode)}
+                  </p>
+                )
               )}
 
               {statusMessage && (
@@ -241,17 +267,22 @@ function MonAbonnementContent() {
 
             {error && <p className="text-tag text-sm mb-3">{error}</p>}
 
-            {isPro ? (
+            {isPro || abonnementEnCours ? (
               <button
                 onClick={handlePortal}
                 disabled={portalLoading}
                 className="press w-full flex items-center justify-center gap-2 rounded-control border border-ink/15 bg-surface text-ink py-3 font-semibold shadow-soft disabled:opacity-50"
               >
                 {portalLoading ? <Spinner size={16} /> : <CreditCard size={16} />}
-                {portalLoading ? "Ouverture…" : "Gérer / annuler mon abonnement"}
+                {portalLoading
+                  ? "Ouverture…"
+                  : isPro
+                    ? "Gérer / annuler mon abonnement"
+                    : "Mettre à jour mon moyen de paiement"}
               </button>
             ) : (
-              !awaitingActivation && (
+              !awaitingActivation &&
+              !activationEnRetard && (
                 <Link
                   href="/tarifs"
                   className="press flex items-center justify-center gap-2 w-full rounded-control bg-teal text-white py-3 font-semibold shadow-soft"

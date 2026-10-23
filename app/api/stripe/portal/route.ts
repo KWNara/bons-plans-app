@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { stripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/authenticatedUser";
@@ -19,10 +20,18 @@ export async function POST(req: Request) {
     return Response.json({ error: "Aucun abonnement associé à ce compte." }, { status: 400 });
   }
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: merchant.stripe_customer_id,
-    return_url: `${siteOrigin(req)}/mon-abonnement`,
-  });
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: merchant.stripe_customer_id,
+      return_url: `${siteOrigin(req)}/mon-abonnement`,
+    });
 
-  return Response.json({ url: portalSession.url });
+    return Response.json({ url: portalSession.url });
+  } catch (err) {
+    Sentry.captureException(err);
+    return Response.json(
+      { error: "La gestion de l'abonnement est momentanément indisponible. Réessaie dans quelques minutes." },
+      { status: 502 }
+    );
+  }
 }

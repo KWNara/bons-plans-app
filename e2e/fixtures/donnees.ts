@@ -59,6 +59,8 @@ export type CompteTest = {
   email: string;
   password: string;
   pseudo: string;
+  /** Pour appeler directement les routes API de l'appli en son nom. */
+  accessToken: string;
   storageState: EtatStockage;
 };
 
@@ -109,6 +111,7 @@ export async function creerCompte(prefixePseudo: string): Promise<CompteTest> {
     email,
     password,
     pseudo,
+    accessToken: session.access_token,
     storageState: {
       cookies: [],
       origins: [
@@ -137,7 +140,11 @@ export async function idCompteParEmail(email: string): Promise<string | null> {
  * vérification) : ce que ces specs testent est ailleurs, cette étape n'est
  * que la mise en place du décor.
  */
-export async function creerMerchant(userId: string, nomEnseigne: string): Promise<string> {
+export async function creerMerchant(
+  userId: string,
+  nomEnseigne: string,
+  statut: "verifie" | "en_attente_verification" = "verifie"
+): Promise<string> {
   await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
     method: "PATCH",
     headers: hs,
@@ -150,7 +157,7 @@ export async function creerMerchant(userId: string, nomEnseigne: string): Promis
     body: JSON.stringify({
       user_id: userId,
       nom_enseigne: nomEnseigne,
-      statut_verification: "verifie",
+      statut_verification: statut,
     }),
   });
 
@@ -270,6 +277,29 @@ export async function creerAmitie(unId: string, deuxId: string) {
     headers: hs,
     body: JSON.stringify({ user_a, user_b, demandeur: unId, statut: "acceptee" }),
   });
+}
+
+// Stripe : uniquement en mode test. Une clé live ne sera jamais utilisée par
+// les specs, qui se désactivent alors d'elles-mêmes.
+const CLE_STRIPE = env.STRIPE_SECRET_KEY?.startsWith("sk_test_") ? env.STRIPE_SECRET_KEY : null;
+export const STRIPE_EN_MODE_TEST = CLE_STRIPE !== null;
+
+export async function stripeTest(chemin: string, methode: "GET" | "DELETE" = "GET") {
+  if (!CLE_STRIPE) throw new Error("Clé Stripe de test absente.");
+  const res = await fetch(`https://api.stripe.com/v1/${chemin}`, {
+    method: methode,
+    headers: { Authorization: `Bearer ${CLE_STRIPE}` },
+  });
+  return res.json();
+}
+
+/** Identifiant du client Stripe enregistré pour ce commerçant, s'il y en a un. */
+export async function clientStripeDe(merchantId: string): Promise<string | null> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/merchant_profiles?select=stripe_customer_id&id=eq.${merchantId}`, {
+    headers: hs,
+  });
+  const lignes = (await res.json()) as { stripe_customer_id: string | null }[];
+  return lignes[0]?.stripe_customer_id ?? null;
 }
 
 /** Supprime des comptes par identifiant — la cascade des clés étrangères

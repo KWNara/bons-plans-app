@@ -2,11 +2,7 @@ import Stripe from "stripe";
 import * as Sentry from "@sentry/nextjs";
 import { stripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-// Un abonnement past_due reste actif : Stripe relance la carte pendant environ
-// trois semaines avant d'abandonner. Couper l'accès dès le premier échec
-// dégraderait un commerçant qui a payé, pour un incident bancaire temporaire.
-const ACTIVE_STATUSES: Stripe.Subscription.Status[] = ["active", "trialing", "past_due"];
+import { abonnementDeReference, finProgrammee, STATUTS_PRO } from "@/lib/abonnement";
 
 function periodEndIso(subscription: Stripe.Subscription): string | null {
   const raw =
@@ -24,21 +20,31 @@ async function syncFromSubscription(subscriptionId: string) {
   // webhooks sont rendus avec la version d'API de l'endpoint (potentiellement
   // différente de celle du SDK), et Stripe ne garantit pas l'ordre de
   // livraison. Relire l'état courant règle les deux problèmes d'un coup.
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const merchantId = subscription.metadata?.merchant_id;
+  const evenement = await stripe.subscriptions.retrieve(subscriptionId);
+  const merchantId = evenement.metadata?.merchant_id;
+  const customerId = evenement.customer as string;
+
+  // L'état du commerçant se calcule sur TOUS les abonnements du client, pas
+  // sur celui de l'événement : sinon un doublon résilié, ou un vieil
+  // événement rejoué, rétrogradait un commerçant dont un autre abonnement
+  // était toujours prélevé.
+  const { data: tous } = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+  const subscription = abonnementDeReference(tous) ?? evenement;
+  const finDePeriode = periodEndIso(subscription);
 
   const payload = {
-    plan: ACTIVE_STATUSES.includes(subscription.status) ? "payant" : "gratuit",
+    plan: STATUTS_PRO.includes(subscription.status) ? "payant" : "gratuit",
     stripe_subscription_id: subscription.id,
     stripe_subscription_status: subscription.status,
-    subscription_current_period_end: periodEndIso(subscription),
+    subscription_current_period_end: finDePeriode,
+    subscription_cancel_at: finProgrammee(subscription, finDePeriode),
   };
 
   const query = supabaseAdmin.from("merchant_profiles").update(payload).select("id");
 
   const { data, error } = merchantId
     ? await query.eq("id", merchantId)
-    : await query.eq("stripe_customer_id", subscription.customer as string);
+    : await query.eq("stripe_customer_id", customerId);
 
   if (error) {
     throw new Error(`Échec de mise à jour du commerçant : ${error.message}`);
