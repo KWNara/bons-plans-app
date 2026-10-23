@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { supprimerCompteParEmail } from "./fixtures/donnees";
 
 test.describe("Inscription", () => {
   test("un pseudo avec une espace est refusé avant tout envoi", async ({ page }) => {
@@ -20,25 +19,65 @@ test.describe("Inscription", () => {
     await expect(page).toHaveURL(/\/inscription/);
   });
 
-  test("un pseudo valide mène à l'écran de confirmation", async ({ page }) => {
-    const suffixe = `${Date.now()}`;
-    const email = `qa-inscription-${suffixe}@example.com`;
+  // Les deux cas suivants simulent le serveur d'authentification. Un vrai
+  // appel n'est pas fiable ici : Supabase refuse les adresses en @example.com,
+  // une vraie adresse recevrait un vrai e-mail (sur un quota d'envoi minuscule
+  // en plan gratuit), et les inscriptions répétées depuis la même machine
+  // finissent bridées (« Trop de tentatives ») avant même d'être examinées.
+  // Ce qui est testé, c'est la réaction du formulaire.
 
-    try {
-      await page.goto("/inscription");
+  test("une adresse refusée par Supabase affiche un message clair", async ({ page }) => {
+    // Forme exacte de la réponse réelle de Supabase pour une adresse refusée.
+    await page.route("**/auth/v1/signup**", (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: JSON.stringify({
+          code: 400,
+          error_code: "email_address_invalid",
+          msg: 'Email address "qa-refus@example.com" is invalid',
+        }),
+      })
+    );
 
-      await page.getByLabel("Pseudo").fill(`QaInscription${suffixe}`);
-      await page.getByLabel("Email").fill(email);
-      await page.locator('input[type="password"]').fill("MotDePasseTest!1");
-      await page.getByRole("button", { name: "Créer mon compte" }).click();
+    await page.goto("/inscription");
 
-      // L'inscription publique exige une confirmation par courriel : on ne
-      // peut pas aller plus loin sans cliquer un lien qu'aucun test n'a reçu.
-      // Atteindre cet écran prouve déjà que signUp() a réellement réussi.
-      await expect(page.getByText("Vérifie ta boîte mail")).toBeVisible();
-      await expect(page.getByText(email)).toBeVisible();
-    } finally {
-      await supprimerCompteParEmail(email);
-    }
+    await page.getByLabel("Pseudo").fill(`QaRefus${Date.now()}`);
+    await page.getByLabel("Email").fill(`qa-refus-${Date.now()}@example.com`);
+    await page.locator('input[type="password"]').fill("MotDePasseTest!1");
+    await page.getByRole("button", { name: "Créer mon compte" }).click();
+
+    await expect(page.getByText("Cette adresse email n'est pas valide.")).toBeVisible();
+    await expect(page).toHaveURL(/\/inscription/);
+  });
+
+  test("une inscription acceptée mène à l'écran de confirmation", async ({ page }) => {
+    const email = "qa-inscription@example.com";
+    await page.route("**/auth/v1/signup**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: JSON.stringify({
+          id: "00000000-0000-4000-8000-000000000000",
+          aud: "authenticated",
+          email,
+          user_metadata: {},
+          app_metadata: {},
+          created_at: new Date().toISOString(),
+        }),
+      })
+    );
+
+    await page.goto("/inscription");
+
+    await page.getByLabel("Pseudo").fill("QaInscription");
+    await page.getByLabel("Email").fill(email);
+    await page.locator('input[type="password"]').fill("MotDePasseTest!1");
+    await page.getByRole("button", { name: "Créer mon compte" }).click();
+
+    await expect(page.getByText("Vérifie ta boîte mail")).toBeVisible();
+    await expect(page.getByText(email)).toBeVisible();
   });
 });

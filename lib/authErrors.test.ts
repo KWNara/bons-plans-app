@@ -20,6 +20,20 @@ describe("authErrorMessage", () => {
     expect(authErrorMessage(new Error("Email rate limit exceeded"))).toContain("Trop de tentatives");
   });
 
+  it("traduit une adresse refusée, au libellé actuel de Supabase", () => {
+    const erreur = Object.assign(new Error('Email address "qa@example.com" is invalid'), {
+      code: "email_address_invalid",
+    });
+    expect(authErrorMessage(erreur)).toBe("Cette adresse email n'est pas valide.");
+  });
+
+  it("se fie au code d'erreur même si le texte anglais change", () => {
+    const erreur = Object.assign(new Error("A wording nobody has seen yet"), {
+      code: "over_email_send_rate_limit",
+    });
+    expect(authErrorMessage(erreur)).toContain("Trop de tentatives");
+  });
+
   it("accepte aussi bien une chaîne qu'une Error", () => {
     expect(authErrorMessage("Invalid login credentials")).toBe("Email ou mot de passe incorrect.");
   });
