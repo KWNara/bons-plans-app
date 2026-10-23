@@ -207,9 +207,12 @@ try {
   $r = Appel { Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/merchant_profiles?id=eq.$m" -Headers $hs -Body '{"latitude":999,"longitude":12}' }
   Verifier "Une latitude hors domaine est refusee" 23514 (CodeErreur $r)
 
+  # Comparer a l'adresse d'avant l'attaque, pas a une adresse vide : le
+  # commercant emprunte peut tres bien en avoir une.
+  $avant = (Invoke-RestMethod -Uri "$url/rest/v1/merchant_profiles?select=adresse&id=eq.$m" -Headers $hs)[0].adresse
   $r = Appel { Invoke-RestMethod -Method Patch -Uri "$url/rest/v1/merchant_profiles?id=eq.$m" -Headers $victime.h -Body '{"adresse":"adresse pirate"}' }
   $reste = (Invoke-RestMethod -Uri "$url/rest/v1/merchant_profiles?select=adresse&id=eq.$m" -Headers $hs)[0].adresse
-  Verifier "Un tiers ne modifie pas l'adresse d'un commercant" "" "$reste"
+  Verifier "Un tiers ne modifie pas l'adresse d'un commercant" "$avant" "$reste"
 
   # =========================================================================
   Write-Host "`nBlocage" -ForegroundColor Cyan
@@ -279,9 +282,12 @@ try {
   # =========================================================================
   Write-Host "`nAvis sur les commercants" -ForegroundColor Cyan
   # =========================================================================
-  $mProfil = Invoke-RestMethod -Uri "$url/rest/v1/merchant_profiles?select=id,user_id&limit=1" -Headers $hs
-  $merchantId = $mProfil[0].id
-  $proprietaireId = $mProfil[0].user_id
+  # Un commercant jetable : en emprunter un existant faisait dependre les
+  # moyennes attendues des avis deja en base.
+  $hsRep = $hs.Clone(); $hsRep["Prefer"] = "return=representation"
+  $proprietaire = Creer "QaAvisPro$suffixe" "qa-avispro-$suffixe@example.com" $null
+  $proprietaireId = $proprietaire.id
+  $merchantId = (Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_profiles" -Headers $hsRep -Body (@{ user_id = $proprietaireId; nom_enseigne = "QA Avis $suffixe"; statut_verification = "verifie" } | ConvertTo-Json))[0].id
 
   Invoke-RestMethod -Method Post -Uri "$url/rest/v1/merchant_reviews" -Headers $bob.h -Body (@{ merchant_id = $merchantId; user_id = $bob.id; note = 5; commentaire = "Tres bon accueil" } | ConvertTo-Json) | Out-Null
 
@@ -317,7 +323,6 @@ try {
   # =========================================================================
   Write-Host "`nPublication d'un bon plan" -ForegroundColor Cyan
   # =========================================================================
-  $hsRep = $hs.Clone(); $hsRep["Prefer"] = "return=representation"
   $villes = Invoke-RestMethod -Uri "$url/rest/v1/cities?select=id&limit=2" -Headers $hs
   $villeA = $villes[0].id
   $villeB = $villes[1].id
