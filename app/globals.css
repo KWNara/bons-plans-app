@@ -13,6 +13,10 @@
   --c-marigold: 232 185 78;
   --c-tag: 200 74 50;
   --c-teal: 47 110 100;
+  /* Couleurs de TEXTE corail et sarcelle (cf. textColor dans
+     tailwind.config.ts) : identiques aux fonds en thème clair. */
+  --c-tag-texte: 200 74 50;
+  --c-teal-texte: 47 110 100;
   --ombre: 27 35 64;
 }
 
@@ -32,6 +36,11 @@
      le seuil AA de 4,5. Assombri jusqu'à une marge confortable. */
   --c-tag: 198 72 48;
   --c-teal: 61 133 119;
+  /* Ces deux fonds, utilisés comme texte sur la surface marine, tombaient à
+     2,7:1 et 3,0:1. Éclaircis pour le texte seulement : 4,9:1 et 5,9:1 sur
+     --c-surface, davantage sur --c-paper. */
+  --c-tag-texte: 240 128 100;
+  --c-teal-texte: 110 190 175;
   --ombre: 0 0 0;
 }
 
@@ -192,6 +201,82 @@ body {
 .carte-deniche .leaflet-container {
   background: rgb(var(--c-paper));
   font-family: inherit;
+}
+
+/* Pastille de repère façon Airbnb : la meilleure réduction du commerce,
+   centrée sur sa position (l'icône Leaflet elle-même fait 0 × 0). Les
+   couleurs s'inversent pour le repère actif, dans les deux thèmes. */
+.carte-deniche .pin-commerce {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--c-ink) / 0.12);
+  background: rgb(var(--c-surface));
+  color: rgb(var(--c-ink));
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgb(var(--ombre) / 0.25);
+  transition: transform 0.15s;
+}
+
+.carte-deniche .pin-commerce-actif {
+  background: rgb(var(--c-ink));
+  color: rgb(var(--c-paper));
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+/* En thème sombre, l'inversion donnait une pastille crème sur des tuiles
+   claires : le repère actif se confondait avec la carte. */
+.dark .carte-deniche .pin-commerce-actif {
+  background: rgb(var(--c-tag));
+  color: #fff;
+}
+
+/* Regroupement de plusieurs commerces proches : une pastille ronde au nombre
+   de commerces, cliquable pour zoomer dessus. */
+.carte-deniche .pin-groupe {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  border: 3px solid rgb(var(--c-surface));
+  /* --c-contrast plutôt que --c-teal : en thème sombre, le blanc sur sarcelle
+     tombait sous le seuil de contraste AA (4,4:1). */
+  background: rgb(var(--c-contrast));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgb(var(--ombre) / 0.3);
+  transition: transform 0.15s;
+}
+
+/* Leaflet donne le focus clavier à l'icône du repère, qui fait 0 × 0 : sans
+   ce report, l'anneau de focus était invisible et la navigation au clavier
+   se faisait à l'aveugle. */
+.carte-deniche .leaflet-marker-icon:focus {
+  outline: none;
+}
+
+.carte-deniche .leaflet-marker-icon:focus-visible .pin-commerce,
+.carte-deniche .leaflet-marker-icon:focus-visible .pin-groupe {
+  /* Les tuiles OpenStreetMap restent claires dans les deux thèmes : un anneau
+     foncé s'y voit toujours, là où le doré passait sous 2:1. */
+  outline: 3px solid rgb(var(--c-contrast));
+  outline-offset: 2px;
+}
+
+.carte-deniche .pin-groupe-actif {
+  background: rgb(var(--c-tag));
+  transform: translate(-50%, -50%) scale(1.12);
 }
 
 @media (prefers-reduced-motion: reduce) {

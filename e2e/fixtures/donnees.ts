@@ -158,6 +158,21 @@ export async function creerMerchant(userId: string, nomEnseigne: string): Promis
   return lignes[0].id;
 }
 
+/** Donne une adresse et une position au commerçant, sans passer par la
+ * recherche d'adresse de son espace : seule la carte est testée ici. */
+export async function placerCommerce(
+  merchantId: string,
+  latitude: number,
+  longitude: number,
+  adresse: string
+) {
+  await fetch(`${SUPABASE_URL}/rest/v1/merchant_profiles?id=eq.${merchantId}`, {
+    method: "PATCH",
+    headers: hs,
+    body: JSON.stringify({ latitude, longitude, adresse }),
+  });
+}
+
 /** Une ville quelconque déjà en base — utilisée comme ville de diffusion
  * dans les fixtures, jamais créée ni modifiée par les specs elles-mêmes. */
 export async function recupererVille(): Promise<{ id: string; nom: string }> {
@@ -238,6 +253,18 @@ export async function supprimerComptes(...ids: (string | null | undefined)[]) {
       headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
     }).catch(() => {});
   }
+}
+
+/** Supprime les comptes des commerçants dont l'enseigne commence par ce
+ * préfixe — les restes d'un passage précédent interrompu avant son
+ * nettoyage, qui fausseraient une spec sensible aux positions. */
+export async function supprimerCommercesParPrefixe(prefixe: string) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/merchant_profiles?select=user_id&nom_enseigne=like.${encodeURIComponent(prefixe)}*`,
+    { headers: hs }
+  );
+  const lignes = (await res.json()) as { user_id: string }[];
+  await supprimerComptes(...lignes.map((l) => l.user_id));
 }
 
 export async function supprimerCompteParEmail(email: string) {

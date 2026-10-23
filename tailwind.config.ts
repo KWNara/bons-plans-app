@@ -20,6 +20,14 @@ const config: Config = {
         tag: "rgb(var(--c-tag) / <alpha-value>)",
         teal: "rgb(var(--c-teal) / <alpha-value>)",
       },
+      // Le corail et la sarcelle servent à la fois de fond (sous du texte
+      // blanc, qui les veut foncés) et de couleur de texte (sur une surface
+      // sombre, qui les veut clairs). En thème sombre, une seule valeur ne
+      // peut pas satisfaire les deux : le texte passe par sa propre variable.
+      textColor: {
+        tag: "rgb(var(--c-tag-texte) / <alpha-value>)",
+        teal: "rgb(var(--c-teal-texte) / <alpha-value>)",
+      },
       fontFamily: {
         sans: ["var(--font-body)", "system-ui", "sans-serif"],
       },

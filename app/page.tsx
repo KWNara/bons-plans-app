@@ -19,13 +19,12 @@ import { supabase } from "@/lib/supabase";
 import { useCity } from "@/lib/cityContext";
 import { useCurrentUserId } from "@/lib/useCurrentUserId";
 import { DealCard, type FeedDeal } from "@/components/DealCard";
-import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { FiltresCategories, type Categorie } from "@/components/FiltresCategories";
 import { DealCardSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PanierVide, RechercheVide } from "@/components/ui/Illustrations";
 import { ErrorState } from "@/components/ui/ErrorState";
 
-type Category = { id: string; nom: string; icone: string | null };
 type Sort = "recent" | "popularite" | "expire_bientot";
 type Tab = "ville" | "pourtoi";
 
@@ -33,7 +32,7 @@ export default function Home() {
   const { selectedCity, loaded } = useCity();
   const userId = useCurrentUserId();
   const [tab, setTab] = useState<Tab>("ville");
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Categorie[]>([]);
   const [categoriesEnEchec, setCategoriesEnEchec] = useState(false);
   const [flashSeul, setFlashSeul] = useState(false);
   // Le comptage et le filtre partageaient l'horloge implicite de `Date.now()`,
@@ -363,39 +362,12 @@ export default function Home() {
                 Flash · {nombreFlash}
               </button>
             )}
-            <button
-              onClick={() => setCategoryId(null)}
-              className={`press whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                categoryId === null
-                  ? "bg-contrast text-white border-contrast"
-                  : "bg-surface text-ink/70 border-ink/10 hover:border-ink/25"
-              }`}
-            >
-              Tout
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setCategoryId(c.id)}
-                className={`press flex items-center gap-1.5 whitespace-nowrap pl-1.5 pr-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  categoryId === c.id
-                    ? "bg-contrast text-white border-contrast"
-                    : "bg-surface text-ink/70 border-ink/10 hover:border-ink/25"
-                }`}
-              >
-                <CategoryIcon
-                  icone={c.icone}
-                  size={11}
-                  className={`w-5 h-5 ${categoryId === c.id ? "!bg-surface/20 [&_svg]:!text-white" : ""}`}
-                />
-                {c.nom}
-              </button>
-            ))}
-            {categoriesEnEchec && (
-              <span className="text-xs text-ink/60 whitespace-nowrap">
-                Filtres indisponibles
-              </span>
-            )}
+            <FiltresCategories
+              categories={categories}
+              categorieId={categoryId}
+              onChange={setCategoryId}
+              enEchec={categoriesEnEchec}
+            />
           </div>
 
           <div className="px-4 pb-3">
