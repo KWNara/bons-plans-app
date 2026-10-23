@@ -14,8 +14,10 @@
   --c-tag: 200 74 50;
   --c-teal: 47 110 100;
   /* Couleurs de TEXTE corail et sarcelle (cf. textColor dans
-     tailwind.config.ts) : identiques aux fonds en thème clair. */
-  --c-tag-texte: 200 74 50;
+     tailwind.config.ts). Le corail du fond ne faisait que 4,06:1 sur le
+     crème de --c-paper : un ton plus sombre pour le texte (4,8:1 sur
+     crème, 5,5:1 sur blanc). La sarcelle passe déjà. */
+  --c-tag-texte: 184 64 42;
   --c-teal-texte: 47 110 100;
   --ombre: 27 35 64;
 }
