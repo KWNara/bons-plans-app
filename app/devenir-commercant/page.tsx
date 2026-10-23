@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { FormInput, FormSelect } from "@/components/ui/FormField";
 import { Spinner } from "@/components/ui/Spinner";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { AdresseSearchInput } from "@/components/AdresseSearchInput";
+import type { AdresseTrouvee } from "@/lib/cities";
 
 type Category = { id: string; nom: string };
 
@@ -18,6 +20,7 @@ export default function DevenirCommercantPage() {
   const [nomEnseigne, setNomEnseigne] = useState("");
   const [siret, setSiret] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [adresse, setAdresse] = useState<AdresseTrouvee | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +109,11 @@ export default function DevenirCommercantPage() {
         nom_enseigne: nomEnseigne,
         category_id: categoryId || null,
         logo_url,
+        ...(adresse && {
+          adresse: adresse.libelle,
+          latitude: adresse.latitude,
+          longitude: adresse.longitude,
+        }),
       }),
     });
 
@@ -205,6 +213,15 @@ export default function DevenirCommercantPage() {
                 </option>
               ))}
             </FormSelect>
+
+            {/* Demandée dès l'inscription : sans elle, le commerçant restait
+                absent de la carte des partenaires, l'adresse n'étant
+                proposée qu'au détour de la page compte. */}
+            <AdresseSearchInput
+              valeur={adresse?.libelle ?? ""}
+              onChoisir={setAdresse}
+              onEffacer={() => setAdresse(null)}
+            />
 
             {error && <p className="text-tag mb-4 text-sm">{error}</p>}
 

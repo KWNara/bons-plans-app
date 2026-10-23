@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, MapPin, Plus, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -38,6 +38,7 @@ export default function MesBonsPlansPage() {
   const [state, setState] = useState<"loading" | "error" | "ready">("loading");
   const [deals, setDeals] = useState<Deal[]>([]);
   const [plan, setPlan] = useState<"gratuit" | "payant">("gratuit");
+  const [sansAdresse, setSansAdresse] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -53,7 +54,7 @@ export default function MesBonsPlansPage() {
 
     const { data: merchant, error: merchantError } = await supabase
       .from("merchant_profiles")
-      .select("id, plan")
+      .select("id, plan, adresse")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -81,6 +82,7 @@ export default function MesBonsPlansPage() {
     }
 
     setPlan(merchant.plan as "gratuit" | "payant");
+    setSansAdresse(!merchant.adresse);
     setDeals(data ?? []);
     setState("ready");
   }, [router]);
@@ -137,6 +139,21 @@ export default function MesBonsPlansPage() {
             Nouveau
           </Link>
         </div>
+
+        {/* La page que le commerçant ouvre le plus : c'est ici que le rappel a
+            une chance d'être vu. */}
+        {state === "ready" && sansAdresse && (
+          <Link
+            href="/compte"
+            className="press mb-5 flex items-start gap-2.5 rounded-control border border-marigold/40 bg-marigold/15 px-3.5 py-3 text-sm text-ink"
+          >
+            <MapPin size={16} className="shrink-0 mt-0.5 text-tag" />
+            <span>
+              <span className="font-semibold">Tu n&apos;es pas encore sur la carte.</span> Ajoute
+              l&apos;adresse de ta boutique pour que les clients du coin te trouvent.
+            </span>
+          </Link>
+        )}
 
         {state === "loading" && (
           <div className="space-y-2.5">

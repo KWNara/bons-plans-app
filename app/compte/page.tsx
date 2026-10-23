@@ -478,6 +478,12 @@ export default function ComptePage() {
               )}
 
               <div className="mt-4">
+                {!merchant.adresse && (
+                  <p className="mb-3 flex items-start gap-2 rounded-control border border-marigold/40 bg-marigold/15 px-3 py-2.5 text-sm text-ink">
+                    <MapPin size={15} className="shrink-0 mt-0.5 text-tag" />
+                    Ajoute l&apos;adresse de ta boutique pour apparaître sur la carte des partenaires.
+                  </p>
+                )}
                 <AdresseSearchInput
                   valeur={merchant.adresse ?? ""}
                   onChoisir={(a) => enregistrerAdresse(a.libelle, a.latitude, a.longitude)}
@@ -486,6 +492,14 @@ export default function ComptePage() {
                 {adresseMessage && (
                   <p className={`text-sm -mt-2 ${adresseOk ? "text-teal" : "text-tag"}`}>
                     {adresseMessage}
+                    {adresseOk && merchant.adresse && (
+                      <>
+                        {" "}
+                        <Link href="/carte" className="font-semibold underline">
+                          Voir sur la carte
+                        </Link>
+                      </>
+                    )}
                   </p>
                 )}
               </div>

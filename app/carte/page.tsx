@@ -229,6 +229,11 @@ export default function CartePage() {
             illustration={RechercheVide}
             title="Rien à placer sur la carte"
             description="Aucun commerce partenaire n'a encore renseigné son adresse."
+            action={
+              <Link href="/compte" className="press text-sm font-semibold text-teal underline">
+                Tu es commerçant ? Ajoute ton adresse
+              </Link>
+            }
           />
         ) : (
           <>

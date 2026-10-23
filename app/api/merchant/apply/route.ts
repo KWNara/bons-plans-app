@@ -18,13 +18,30 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { siret, nom_enseigne, category_id, ville_principale_id, logo_url } = body as {
-    siret?: string;
-    nom_enseigne?: string;
-    category_id?: string;
-    ville_principale_id?: string;
-    logo_url?: string;
-  };
+  const { siret, nom_enseigne, category_id, ville_principale_id, logo_url, adresse, latitude, longitude } =
+    body as {
+      siret?: string;
+      nom_enseigne?: string;
+      category_id?: string;
+      ville_principale_id?: string;
+      logo_url?: string;
+      adresse?: unknown;
+      latitude?: unknown;
+      longitude?: unknown;
+    };
+
+  // Facultative, mais entière ou absente : une adresse sans coordonnées
+  // s'afficherait sur la fiche sans jamais placer le commerçant sur la carte.
+  // La base borne les valeurs (contraintes sur latitude/longitude).
+  const position =
+    typeof adresse === "string" &&
+    adresse.trim() !== "" &&
+    typeof latitude === "number" &&
+    Number.isFinite(latitude) &&
+    typeof longitude === "number" &&
+    Number.isFinite(longitude)
+      ? { adresse: adresse.trim().slice(0, 300), latitude, longitude }
+      : {};
 
   if (!siret || !isValidSiretFormat(siret)) {
     return Response.json(
@@ -75,6 +92,7 @@ export async function POST(req: Request) {
     ville_principale_id: ville_principale_id || null,
     logo_url: logo_url || null,
     statut_verification,
+    ...position,
   });
 
   if (insertError) {
