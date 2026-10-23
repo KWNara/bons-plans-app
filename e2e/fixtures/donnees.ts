@@ -175,8 +175,8 @@ export async function placerCommerce(
 
 /** Une ville quelconque déjà en base — utilisée comme ville de diffusion
  * dans les fixtures, jamais créée ni modifiée par les specs elles-mêmes. */
-export async function recupererVille(): Promise<{ id: string; nom: string }> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/cities?select=id,nom&limit=1`, {
+export async function recupererVille(): Promise<{ id: string; nom: string; code_postal: string }> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/cities?select=id,nom,code_postal&limit=1`, {
     headers: hs,
   });
   const lignes = await res.json();
@@ -215,7 +215,11 @@ export async function compterDealsAvecTitre(merchantId: string, titre: string): 
 
 /** Publie un bon plan directement en base : la publication via le vrai
  * formulaire est son propre sujet, distinct de ce que ces specs vérifient. */
-export async function creerDealPublie(merchantId: string, titre: string): Promise<string> {
+export async function creerDealPublie(
+  merchantId: string,
+  titre: string,
+  options: { date_fin?: string; reduction_pourcentage?: number } = {}
+): Promise<string> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/deals`, {
     method: "POST",
     headers: { ...hs, Prefer: "return=representation" },
@@ -224,11 +228,36 @@ export async function creerDealPublie(merchantId: string, titre: string): Promis
       titre,
       statut: "publie",
       photos: [],
+      ...options,
     }),
   });
 
   const lignes = await res.json();
   return lignes[0].id;
+}
+
+/** Diffuse un bon plan dans une ville : le fil ne montre que les bons plans
+ * rattachés à la ville choisie (deal_cities). */
+export async function diffuserDans(dealId: string, cityId: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/deal_cities`, {
+    method: "POST",
+    headers: hs,
+    body: JSON.stringify({ deal_id: dealId, city_id: cityId }),
+  });
+}
+
+/** Contexte de navigateur où une ville est déjà choisie, comme après un
+ * passage par /ville (cf. lib/cityContext.tsx). */
+export function etatAvecVille(ville: { id: string; nom: string; code_postal: string }) {
+  return {
+    cookies: [],
+    origins: [
+      {
+        origin: "http://localhost:3000",
+        localStorage: [{ name: "bons-plans:selected-city", value: JSON.stringify(ville) }],
+      },
+    ],
+  };
 }
 
 /** Crée directement une amitié acceptée entre deux comptes — la demande puis
